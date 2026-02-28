@@ -8,7 +8,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -32,15 +32,22 @@
         window._firebaseDb = db;
         window._firebaseStorage = storage;
         window._firebaseProvider = provider;
-        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc };
+        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc };
         window._firebaseStorageFns = { ref, uploadBytesResumable, getDownloadURL };
 
-        // Watch auth state
+        // Watch auth state — restore session on page reload for ALL Firebase users
         onAuthStateChanged(auth, async (user) => {
             if (user && !window._googleLoginHandled) {
-                // User is signed in from a previous session
-                window._googleLoginHandled = true;
-                await window._handleGoogleUser(user);
+                // Check if this is a Google sign-in or email/password sign-in
+                const isGoogle = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+                if (isGoogle) {
+                    window._googleLoginHandled = true;
+                    await window._handleGoogleUser(user);
+                } else {
+                    // Email/password user — restore from Firestore if session exists
+                    window._googleLoginHandled = true;
+                    await window._handleEmailUser(user);
+                }
             }
         });
     </script>
@@ -2154,9 +2161,11 @@
         .msg-bubble-row.me {
             align-self: flex-end;
             flex-direction: row-reverse;
+            margin-left: auto;
         }
         .msg-bubble-row.them {
             align-self: flex-start;
+            margin-right: auto;
         }
         .msg-bubble-avatar {
             width: 28px; height: 28px;
@@ -2937,10 +2946,14 @@
                             <input class="post-modal-comment-input" id="pmCommentInput" placeholder="Ajouter un commentaire..." onkeydown="handleCommentKey(event)" oninput="handleMentionInput(event)" autocomplete="off">
                             <!-- @mention dropdown -->
                             <div id="mentionDropdown" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#222;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;z-index:10;max-height:180px;overflow-y:auto;"></div>
+                            <!-- Emoji picker for comments -->
+                            <div id="pmEmojiPicker" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:280px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:10px;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
+                                <div id="pmEmojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:180px;overflow-y:auto;"></div>
+                            </div>
                         </div>
                         <div class="pm-input-actions">
                             <button class="pm-input-btn" onclick="insertMention()" title="Mentionner">@</button>
-                            <button class="pm-input-btn">🙂</button>
+                            <button class="pm-input-btn" onclick="togglePmEmoji()" title="Emoji">🙂</button>
                             <button class="pm-send-btn" onclick="submitModalComment()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
                             </button>
@@ -3501,6 +3514,46 @@
         }
     };
 
+    // Restore session for email/password Firebase users on page reload
+    window._handleEmailUser = async function(firebaseUser) {
+        const db = window._firebaseDb;
+        const fns = window._firebaseFns;
+        if (!db || !fns) return;
+        const { doc, getDoc } = fns;
+        try {
+            const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (!snap.exists()) return; // No profile yet, let handleLogin handle it
+            const userDoc = snap.data();
+            currentUser = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: userDoc.displayName,
+                username: userDoc.username,
+                avatar: userDoc.avatar || '👤',
+                canPublish: userDoc.canPublish || false,
+                role: userDoc.role || 'eleve',
+                isFirebaseUser: true
+            };
+            userProfile.displayName = currentUser.displayName;
+            userProfile.username = currentUser.username;
+            userProfile.email = currentUser.email;
+            userProfile.avatar = currentUser.avatar;
+            userProfile.canPublish = currentUser.canPublish;
+            userProfile.role = currentUser.role;
+            if (userDoc.avatarImg) userProfile.avatarImg = userDoc.avatarImg;
+            if (userDoc.bio) userProfile.bio = userDoc.bio;
+            if (userDoc.following) userProfile.following = userDoc.following;
+            if (userDoc.likedPosts) userProfile.likedPosts = userDoc.likedPosts.map(id => ({ id }));
+            if (userDoc.repostedPosts) userProfile.repostedPosts = userDoc.repostedPosts;
+            saveSession();
+            await loadPostsFromFirestore();
+            // Only show app if not already showing
+            if (document.getElementById('authScreen').style.display !== 'none') {
+                showApp();
+            }
+        } catch(e) { console.warn('Email user restore error:', e); }
+    };
+
     async function confirmGoogleProfile() {
         const displayName = document.getElementById('googleDisplayName').value.trim();
         const usernameRaw = document.getElementById('googleUsername').value.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
@@ -3571,17 +3624,31 @@
     async function savePostToFirestore(post) {
         try {
             const db = window._firebaseDb;
-            const { doc, setDoc } = window._firebaseFns;
-            // videoSrc is now a permanent Firebase Storage URL (not a blob), safe to save
-            const postToSave = { ...post };
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { doc, setDoc } = fns;
+            // Strip blob URLs before saving — only permanent URLs survive
+            const postToSave = {
+                ...post,
+                videoSrc: (post.videoSrc && post.videoSrc.startsWith('blob:')) ? null : (post.videoSrc || null),
+                photos: (post.photos || []).filter(u => !u.startsWith('blob:'))
+            };
             await setDoc(doc(db, 'posts', String(post.id)), postToSave);
         } catch(e) { console.warn('Post save error:', e); }
+    }
+
+    // Save post for ALL users (not just Google)
+    function autoSavePost(post) {
+        savePostToFirestore(post).catch(()=>{});
+        saveSession();
     }
 
     async function loadPostsFromFirestore() {
         try {
             const db = window._firebaseDb;
-            const { collection, getDocs, query, orderBy } = window._firebaseFns;
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { collection, getDocs, query, orderBy } = fns;
             const q = query(collection(db, 'posts'), orderBy('id', 'desc'));
             const snap = await getDocs(q);
             // Load deleted post IDs from localStorage to avoid re-adding them
@@ -3591,11 +3658,22 @@
                 if (!sp || !sp.id) return;
                 // Skip posts that were deleted by this user
                 if (deletedIds.includes(sp.id)) return;
+                // Firestore is the source of truth — always use its data
+                // (likes, views, reposts are all saved there)
                 if (!posts.find(p => p.id === sp.id)) {
                     posts.unshift(sp);
                 } else {
                     const idx = posts.findIndex(p => p.id === sp.id);
-                    if (idx !== -1) posts[idx] = { ...posts[idx], ...sp, videoSrc: posts[idx].videoSrc };
+                    if (idx !== -1) {
+                        // Prefer Firestore videoSrc if it's a real URL (not blob)
+                        const firestoreVideoSrc = sp.videoSrc && !sp.videoSrc.startsWith('blob:') ? sp.videoSrc : null;
+                        const localVideoSrc = posts[idx].videoSrc && !posts[idx].videoSrc.startsWith('blob:') ? posts[idx].videoSrc : null;
+                        posts[idx] = {
+                            ...posts[idx],
+                            ...sp,
+                            videoSrc: firestoreVideoSrc || localVideoSrc || null
+                        };
+                    }
                 }
             });
             // Reapply current user's like/save/repost state
@@ -3611,11 +3689,15 @@
 
     // Save user profile to Firestore after changes
     async function saveUserToFirestore() {
-        if (!currentUser || !currentUser.isGoogleUser) return;
+        if (!currentUser) return;
         try {
             const db = window._firebaseDb;
-            const { doc, setDoc } = window._firebaseFns;
-            await setDoc(doc(db, 'users', currentUser.id), {
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { doc, setDoc } = fns;
+            const userId = currentUser.id || currentUser.uid;
+            if (!userId) return;
+            await setDoc(doc(db, 'users', String(userId)), {
                 displayName: userProfile.displayName || currentUser.displayName,
                 username: userProfile.username,
                 email: userProfile.email,
@@ -3625,7 +3707,7 @@
                 canPublish: userProfile.canPublish || false,
                 role: userProfile.role,
                 following: userProfile.following || [],
-                likedPosts: (userProfile.likedPosts || []).map(p => p.id),
+                likedPosts: (userProfile.likedPosts || []).map(p => p.id || p),
                 repostedPosts: userProfile.repostedPosts || []
             });
         } catch(e) { console.warn('User save error:', e); }
@@ -3649,49 +3731,8 @@
     const validCodes = { 'ABC123XYZ456': false, 'DEF789QWE234': false, 'GHI567RTE890': false };
 
     function defaultDemoPosts() {
-        return [
-        {
-            id: 1, author: 'Prof HGGSP', username: '@profhggsp', avatar: '👨‍🏫',
-            title: 'Enjeux Géopolitiques du 21e Siècle',
-            description: 'Découvrez les principaux enjeux géopolitiques mondiaux et comment ils façonnent notre époque moderne.',
-            likes: 234, comments: 2, views: 1200, video: '🌍',
-            timestamp: 'il y a 2h', isLiked: false, role: 'prof',
-            hashtags: ['#géopolitique', '#monde', '#21esiècle', '#hggsp'],
-            commentList: [
-                { author: 'Elève 1', text: 'Très intéressant !', time: 'il y a 1h', date: Date.now() - 3600000, authorId: '123', role: 'eleve', likes: 12, avatar: '👤' },
-                { author: 'Elève 2', text: 'Merci pour cette explication 🙏', time: 'il y a 45min', date: Date.now() - 2700000, authorId: '456', role: 'eleve', likes: 8, avatar: '👤' }
-            ],
-            saves: 46, reposts: 12, authorId: 'prof'
-        },
-        {
-            id: 2, author: 'Marie Dupont', username: '@mariedupont', avatar: '👤',
-            title: 'Analyse Géopolitique: Europe et Tensions',
-            description: 'Ma propre analyse des tensions actuelles en Europe et leurs implications pour les années à venir.',
-            likes: 45, comments: 1, views: 523, video: '🗺️',
-            timestamp: 'il y a 4h', isLiked: false, role: 'eleve',
-            hashtags: ['#europe', '#géopolitique', '#tensions', '#hggsp'],
-            commentList: [{ author: 'Prof HGGSP', text: 'Bon travail, analyse solide !', time: 'il y a 2h', date: Date.now() - 7200000, authorId: 'prof', role: 'prof', likes: 15, avatar: '👨‍🏫' }],
-            saves: 12, reposts: 3, authorId: '123'
-        },
-        {
-            id: 3, author: 'Lucas Martin', username: '@lucasmartin', avatar: '👤',
-            title: 'La mondialisation en question',
-            description: 'Synthèse sur les effets de la mondialisation et les débats actuels sur sa remise en question.',
-            likes: 89, comments: 0, views: 742, video: '🌐',
-            timestamp: 'il y a 6h', isLiked: false, role: 'eleve',
-            hashtags: ['#mondialisation', '#économie', '#hggsp'],
-            commentList: [], saves: 23, reposts: 7, authorId: '456'
-        },
-        {
-            id: 4, author: 'Prof HGGSP', username: '@profhggsp', avatar: '👨‍🏫',
-            title: 'Les grandes puissances du XXIe siècle',
-            description: "Analyse comparative des États-Unis, Chine, Russie et leur influence sur l'ordre mondial.",
-            likes: 312, comments: 0, views: 2100, video: '🏛️',
-            timestamp: 'il y a 1j', isLiked: false, role: 'prof',
-            hashtags: ['#puissances', '#usa', '#chine', '#russie', '#hggsp'],
-            commentList: [], saves: 87, reposts: 34, authorId: 'prof'
-        }
-    ]; }
+        return [];
+    }
 
     let posts = defaultDemoPosts();
 
@@ -3781,7 +3822,18 @@
 
     // ── AUTO-RESTORE SESSION ON LOAD ──
     window.addEventListener('DOMContentLoaded', () => {
+        // Clean old demo posts from localStorage (ids 1,2,3,4)
+        try {
+            const saved = localStorage.getItem('hggsp_posts');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                const cleaned = parsed.filter(p => ![1,2,3,4].includes(p.id));
+                localStorage.setItem('hggsp_posts', JSON.stringify(cleaned));
+            }
+        } catch(e) {}
         loadSavedPosts();
+        // Always load Firestore posts (public posts visible to all)
+        loadPostsFromFirestore().catch(()=>{});
         if (loadSession()) {
             showApp();
         }
@@ -3808,7 +3860,7 @@
         }
     }
 
-    function handleLogin() {
+    async function handleLogin() {
         const displayName = document.getElementById('authDisplayName').value.trim();
         const usernameRaw = document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9._]/g, '');
         const email = document.getElementById('authEmail').value.trim();
@@ -3820,37 +3872,131 @@
         if (usernameRaw.length < 3) {
             showToast("Le nom d'utilisateur doit faire au moins 3 caractères", 'error'); return;
         }
+        if (password.length < 6) {
+            showToast("Le mot de passe doit faire au moins 6 caractères", 'error'); return;
+        }
 
-        // Check for duplicate username
         const handle = '@' + usernameRaw;
-        const taken = posts.some(p => p.username.toLowerCase() === handle.toLowerCase());
-        const errEl = document.getElementById('usernameError');
-        if (taken) {
-            if (errEl) errEl.style.display = 'block';
-            showToast("Ce nom d'utilisateur est déjà pris ❌", 'error');
+        const isProf = selectedRole === 'prof';
+        const loginBtn = document.querySelector('.auth-panel .btn-primary');
+        if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Connexion...'; }
+
+        const auth = window._firebaseAuth;
+        const db = window._firebaseDb;
+        const fns = window._firebaseFns;
+
+        if (!auth || !fns) {
+            showToast('Firebase non disponible', 'error');
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
             return;
         }
-        if (errEl) errEl.style.display = 'none';
 
-        const isProf = selectedRole === 'prof';
-        currentUser = {
-            id: Date.now(), email,
-            displayName: displayName,
-            username: handle,
-            avatar: isProf ? '👨‍🏫' : '👤',
-            canPublish: isProf,
-            role: selectedRole
-        };
-        userProfile.displayName = displayName;
-        userProfile.username = handle;
-        userProfile.email = email;
-        userProfile.avatar = currentUser.avatar;
-        userProfile.canPublish = isProf;
-        userProfile.role = selectedRole;
-        // ── Save session to localStorage ──
-        saveSession();
-        if (isProf) showToast('Connecté en tant que Professeur 👨‍🏫', 'success');
-        showApp();
+        const { createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc, getDoc } = fns;
+
+        try {
+            let firebaseUser;
+            let isNewUser = false;
+
+            // Try to sign in first
+            try {
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                firebaseUser = cred.user;
+            } catch(signInErr) {
+                if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/wrong-password') {
+                    // Create new account
+                    try {
+                        const cred = await createUserWithEmailAndPassword(auth, email, password);
+                        firebaseUser = cred.user;
+                        isNewUser = true;
+                    } catch(createErr) {
+                        if (createErr.code === 'auth/email-already-in-use') {
+                            showToast('Mot de passe incorrect ❌', 'error');
+                        } else if (createErr.code === 'auth/weak-password') {
+                            showToast('Mot de passe trop court (min 6 car.)', 'error');
+                        } else {
+                            showToast('Erreur : ' + createErr.message, 'error');
+                        }
+                        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
+                        return;
+                    }
+                } else if (signInErr.code === 'auth/invalid-email') {
+                    showToast('Email invalide ❌', 'error');
+                    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
+                    return;
+                } else {
+                    showToast('Erreur de connexion : ' + signInErr.message, 'error');
+                    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
+                    return;
+                }
+            }
+
+            // Load existing profile from Firestore if it exists
+            let savedProfile = null;
+            try {
+                const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+                if (userDoc.exists()) savedProfile = userDoc.data();
+            } catch(e) {}
+
+            // Use saved profile data if exists, otherwise use form data
+            const finalDisplayName = savedProfile ? (savedProfile.displayName || displayName) : displayName;
+            const finalHandle = savedProfile ? (savedProfile.username || handle) : handle;
+            const finalRole = savedProfile ? (savedProfile.role || selectedRole) : selectedRole;
+            const finalCanPublish = savedProfile ? (savedProfile.canPublish || isProf) : isProf;
+
+            currentUser = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: finalDisplayName,
+                username: finalHandle,
+                avatar: finalRole === 'prof' ? '👨‍🏫' : '👤',
+                canPublish: finalCanPublish,
+                role: finalRole,
+                isFirebaseUser: true
+            };
+
+            userProfile.displayName = finalDisplayName;
+            userProfile.username = finalHandle;
+            userProfile.email = firebaseUser.email;
+            userProfile.avatar = currentUser.avatar;
+            userProfile.canPublish = finalCanPublish;
+            userProfile.role = finalRole;
+
+            // Restore liked/reposted/following from Firestore
+            if (savedProfile) {
+                userProfile.following = savedProfile.following || [];
+                userProfile.repostedPosts = savedProfile.repostedPosts || [];
+                userProfile.likedPosts = (savedProfile.likedPosts || []).map(id => ({ id }));
+                userProfile.avatarImg = savedProfile.avatarImg || null;
+                userProfile.bio = savedProfile.bio || '';
+            }
+
+            // Save/update profile in Firestore
+            if (isNewUser || !savedProfile) {
+                await setDoc(doc(db, 'users', firebaseUser.uid), {
+                    displayName: finalDisplayName,
+                    username: finalHandle,
+                    email: firebaseUser.email,
+                    avatar: currentUser.avatar,
+                    canPublish: finalCanPublish,
+                    role: finalRole,
+                    following: [],
+                    likedPosts: [],
+                    repostedPosts: []
+                });
+            }
+
+            window._googleLoginHandled = true;
+            saveSession();
+            if (finalRole === 'prof') showToast('Connecté en tant que Professeur 👨‍🏫', 'success');
+            else showToast('Connecté ✅', 'success');
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
+            showApp();
+
+        } catch(e) {
+            console.error('Login error:', e);
+            showToast('Erreur inattendue', 'error');
+            if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
+        }
     }
 
     function handleCodeValidation() {
@@ -3928,6 +4074,8 @@
             }
         }
         renderPosts();
+        // Load posts from Firestore for ALL users (not just Google)
+        loadPostsFromFirestore().catch(()=>{});
     }
 
     // ── TAB ──
@@ -4228,6 +4376,8 @@
 
         // Increment view count
         post.views = (post.views || 0) + 1;
+        // Save views to Firestore
+        autoSavePost(post);
         // Update card view count live
         renderPosts();
 
@@ -4557,6 +4707,37 @@
         renderModalComments(post);
     }
 
+    function togglePmEmoji() {
+        const picker = document.getElementById('pmEmojiPicker');
+        if (!picker) return;
+        if (picker.style.display === 'none') {
+            const grid = document.getElementById('pmEmojiGrid');
+            grid.innerHTML = MSG_EMOJIS.map(e => `<span onclick="insertPmEmoji('${e}')" style="cursor:pointer;font-size:1.3rem;text-align:center;padding:3px;border-radius:6px;transition:background 0.1s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">${e}</span>`).join('');
+            picker.style.display = 'block';
+        } else {
+            picker.style.display = 'none';
+        }
+    }
+
+    function insertPmEmoji(emoji) {
+        const input = document.getElementById('pmCommentInput');
+        if (input) {
+            const pos = input.selectionStart || input.value.length;
+            input.value = input.value.slice(0, pos) + emoji + input.value.slice(pos);
+            input.focus();
+            input.setSelectionRange(pos + emoji.length, pos + emoji.length);
+        }
+        document.getElementById('pmEmojiPicker').style.display = 'none';
+    }
+
+    // Close pm emoji picker on outside click
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('pmEmojiPicker');
+        if (picker && !picker.contains(e.target) && !e.target.closest('.pm-input-btn')) {
+            picker.style.display = 'none';
+        }
+    });
+
     function focusModalComment() {
         const inp = document.getElementById('pmCommentInput');
         if (inp) inp.focus();
@@ -4613,7 +4794,8 @@
             if (userProfile.likedPosts) userProfile.likedPosts = userProfile.likedPosts.filter(p => p.id !== currentModalPostId);
         }
         saveSession();
-        if (currentUser && currentUser.isGoogleUser) { savePostToFirestore(post).catch(()=>{}); saveUserToFirestore().catch(()=>{}); }
+        autoSavePost(post);
+        if (currentUser && currentUser.isGoogleUser) { saveUserToFirestore().catch(()=>{}); }
         renderPosts();
     }
 
@@ -4629,7 +4811,7 @@
         if (icon) icon.setAttribute('fill', post.isSaved ? '#ffd700' : 'none');
         showToast(post.isSaved ? 'Post sauvegardé 🔖' : 'Sauvegarde retirée', 'info');
         saveSession();
-        if (currentUser && currentUser.isGoogleUser) savePostToFirestore(post).catch(()=>{});
+        autoSavePost(post);
     }
 
     function toggleFollow(btn) {
@@ -4672,7 +4854,8 @@
         document.getElementById('pmRepostBtn').className = 'post-modal-act' + (!isReposted ? ' saved' : '');
         document.getElementById('pmRepostIcon').setAttribute('stroke', !isReposted ? '#25f4ee' : 'currentColor');
         saveSession();
-        if (currentUser && currentUser.isGoogleUser) { savePostToFirestore(post).catch(()=>{}); saveUserToFirestore().catch(()=>{}); }
+        autoSavePost(post);
+        if (currentUser && currentUser.isGoogleUser) { saveUserToFirestore().catch(()=>{}); }
         renderPosts();
     }
 
@@ -4905,43 +5088,10 @@
 
         let permanentVideoURL = null;
 
-        // ── FIREBASE STORAGE VIDEO UPLOAD ──
-        if (selectedVideoFile) {
-            try {
-                const storage = window._firebaseStorage;
-                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
-                if (storage && ref && uploadBytesResumable && getDownloadURL) {
-                    if (publishBtn) publishBtn.textContent = 'Upload vidéo... 0%';
-                    const userId = currentUser.id || 'anonymous';
-                    const fileName = `${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-                    const storageRef = ref(storage, `videos/${userId}/${fileName}`);
-                    permanentVideoURL = await new Promise((resolve, reject) => {
-                        const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
-                        uploadTask.on('state_changed',
-                            (snapshot) => {
-                                const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                                if (publishBtn) publishBtn.textContent = `Upload vidéo... ${pct}%`;
-                            },
-                            (error) => {
-                                console.error('Upload error:', error);
-                                reject(error);
-                            },
-                            async () => {
-                                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                                resolve(url);
-                            }
-                        );
-                    });
-                    showToast('Vidéo uploadée ✅', 'success');
-                } else {
-                    // Fallback: blob URL (session only)
-                    permanentVideoURL = selectedVideoURL;
-                }
-            } catch (err) {
-                console.error('Firebase Storage error:', err);
-                showToast('Erreur upload vidéo, utilisation locale', 'error');
-                permanentVideoURL = selectedVideoURL; // fallback
-            }
+        // Video: use blob URL directly (visible this session)
+        // Firebase Storage upload requires rules to be configured — skipped for now
+        if (selectedVideoFile && selectedVideoURL) {
+            permanentVideoURL = selectedVideoURL;
         }
 
         // Convert photos to base64 — works for everyone, no Firebase Storage needed
@@ -4974,11 +5124,9 @@
         selectedVideoFile = null;
         selectedPhotos = [];
         saveSession();
-        // Save to Firestore for Google users
-        if (currentUser && currentUser.isGoogleUser) {
-            savePostToFirestore(newPost).catch(()=>{});
-            saveUserToFirestore().catch(()=>{});
-        }
+        // Save to Firestore for ALL users
+        autoSavePost(newPost);
+        saveUserToFirestore().catch(()=>{});
         showToast('Post publié ! ✅', 'success');
         if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
         switchTab('blog', null);
@@ -5384,7 +5532,7 @@
             }
         });
         saveSession();
-        if (currentUser && currentUser.isGoogleUser) saveUserToFirestore().catch(()=>{});
+        saveUserToFirestore().catch(()=>{});
         document.getElementById('spSubModal').style.display = 'none';
         updateProfileTab();
         showToast('Profil mis à jour ✅', 'success');
@@ -6019,13 +6167,8 @@
     let activeConvId = null;
     const MSG_EMOJIS = ['😀','😂','🥰','😍','🤩','😎','🥳','😊','🙃','😜','🤔','😅','😭','😤','🤯','🥺','❤️','🔥','💯','👏','🙌','💪','✅','🎉','🎊','👀','💬','✨','🚀','💡','📚','🏆','🎯','💎','⚡','🌍','🇫🇷','📖','✏️','🖊️','📝','📌','📎','🔖','🗂️','💻','📱','🎬','🎵','😆','😁','🤣','😇','🤗','🤭','🫡','🤝','👍','👋'];
 
-    // Simulate that demo users "follow back" the current user once we follow them
-    const DEMO_USER_IDS = ['prof', '123', '456'];
-    const demoUserInfo = {
-        'prof':  { name: 'Prof HGGSP',    username: '@profhggsp',  avatar: '👨‍🏫', avatarImg: null, role: 'prof' },
-        '123':   { name: 'Marie Dupont',  username: '@mariedupont', avatar: '👤', avatarImg: null, role: 'eleve' },
-        '456':   { name: 'Lucas Martin',  username: '@lucasmartin', avatar: '👤', avatarImg: null, role: 'eleve' },
-    };
+    const DEMO_USER_IDS = [];
+    const demoUserInfo = {};
 
     function getMutualFollows() {
         if (!currentUser) return [];
