@@ -3707,19 +3707,39 @@
     }
 
     // ── LOCAL STORAGE ──
+    function cleanPostForSave(p) {
+        return {
+            ...p,
+            // Strip blob URLs (die on reload) — base64 and Firebase URLs survive
+            videoSrc: (p.videoSrc && p.videoSrc.startsWith('blob:')) ? null : p.videoSrc,
+            // Keep base64 photos (data:image/...) but strip blob photo URLs
+            photos: (p.photos || []).filter(u => !u.startsWith('blob:'))
+        };
+    }
+
     function saveSession() {
         try {
-            // Save user session
             localStorage.setItem('hggsp_session', JSON.stringify({ currentUser, userProfile }));
-            // Save posts (without videoSrc blob URLs which die on reload)
-            const postsToSave = posts.map(p => ({ ...p, videoSrc: (p.videoSrc && p.videoSrc.startsWith('blob:')) ? null : p.videoSrc }));
-            localStorage.setItem('hggsp_posts', JSON.stringify(postsToSave));
+            const deletedIds = JSON.parse(localStorage.getItem('hggsp_deleted_posts') || '[]');
+            // Only save non-deleted posts
+            const postsToSave = posts
+                .filter(p => !deletedIds.includes(p.id))
+                .map(cleanPostForSave);
+            try {
+                localStorage.setItem('hggsp_posts', JSON.stringify(postsToSave));
+            } catch(quota) {
+                // localStorage full (base64 photos too heavy) — save without media
+                console.warn('localStorage full, saving posts without media');
+                const postsLight = postsToSave.map(p => ({ ...p, photos: [], videoSrc: null }));
+                localStorage.setItem('hggsp_posts', JSON.stringify(postsLight));
+            }
         } catch(e) { console.warn('Save failed:', e); }
     }
 
     function savePosts() {
         try {
-            const postsToSave = posts.map(p => ({ ...p, videoSrc: (p.videoSrc && p.videoSrc.startsWith('blob:')) ? null : p.videoSrc }));
+            const deletedIds = JSON.parse(localStorage.getItem('hggsp_deleted_posts') || '[]');
+            const postsToSave = posts.filter(p => !deletedIds.includes(p.id)).map(cleanPostForSave);
             localStorage.setItem('hggsp_posts', JSON.stringify(postsToSave));
         } catch(e) {}
     }
@@ -3743,16 +3763,19 @@
             const saved = localStorage.getItem('hggsp_posts');
             if (!saved) return;
             const savedPosts = JSON.parse(saved);
-            // Merge: keep demo posts, add saved user posts that aren't already there
+            const deletedIds = JSON.parse(localStorage.getItem('hggsp_deleted_posts') || '[]');
             savedPosts.forEach(sp => {
+                // Never re-add deleted posts
+                if (deletedIds.includes(sp.id)) return;
                 if (!posts.find(p => p.id === sp.id)) {
                     posts.unshift(sp);
                 } else {
-                    // Update existing post data (likes, comments, etc.)
                     const idx = posts.findIndex(p => p.id === sp.id);
-                    if (idx !== -1) posts[idx] = { ...posts[idx], ...sp, videoSrc: posts[idx].videoSrc };
+                    if (idx !== -1) posts[idx] = { ...posts[idx], ...sp };
                 }
             });
+            // Remove deleted posts from in-memory array too
+            posts = posts.filter(p => !deletedIds.includes(p.id));
         } catch(e) {}
     }
 
@@ -4882,39 +4905,10 @@
 
         let permanentVideoURL = null;
 
-        // Upload video to Firebase Storage if a file was selected
-        if (selectedVideoFile) {
-            if (window._firebaseStorage && window._firebaseStorageFns) {
-                try {
-                    showToast('Upload de la vidéo en cours... 🎬', 'success');
-                    const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
-                    const storage = window._firebaseStorage;
-                    const fileName = `videos/${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-                    const storageRef = ref(storage, fileName);
-                    await new Promise((resolve, reject) => {
-                        const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
-                        uploadTask.on('state_changed',
-                            (snapshot) => {
-                                const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                                if (publishBtn) publishBtn.textContent = `Upload ${progress}%...`;
-                            },
-                            (error) => reject(error),
-                            async () => {
-                                permanentVideoURL = await getDownloadURL(uploadTask.snapshot.ref);
-                                resolve();
-                            }
-                        );
-                    });
-                    showToast('Vidéo uploadée ✅', 'success');
-                } catch (err) {
-                    console.warn('Firebase Storage indispo, fallback blob:', err);
-                    permanentVideoURL = selectedVideoURL;
-                    showToast('Vidéo publiée (session uniquement — active Firebase Storage pour la persistance)', 'info');
-                }
-            } else {
-                permanentVideoURL = selectedVideoURL;
-                showToast('Vidéo publiée localement 📱', 'info');
-            }
+        // Video: use blob URL directly (visible this session)
+        // Firebase Storage upload requires rules to be configured — skipped for now
+        if (selectedVideoFile && selectedVideoURL) {
+            permanentVideoURL = selectedVideoURL;
         }
 
         // Convert photos to base64 — works for everyone, no Firebase Storage needed
@@ -4954,8 +4948,7 @@
         }
         showToast('Post publié ! ✅', 'success');
         if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
-        const blogBtn = document.querySelector('.nav-btn:nth-child(2)');
-        switchTab('blog', blogBtn);
+        switchTab('blog', null);
     }
 
     function setupHashtagPreview() {
