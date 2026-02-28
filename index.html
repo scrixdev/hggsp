@@ -8,8 +8,9 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAUzRgupz7ykTxprH6xxlq11fwH4WROyuE",
@@ -23,13 +24,16 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
 
         // Expose to window for use from inline scripts
         window._firebaseAuth = auth;
         window._firebaseDb = db;
+        window._firebaseStorage = storage;
         window._firebaseProvider = provider;
-        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc };
+        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc };
+        window._firebaseStorageFns = { ref, uploadBytesResumable, getDownloadURL };
 
         // Watch auth state
         onAuthStateChanged(auth, async (user) => {
@@ -264,6 +268,234 @@
         .app-container.active { display: flex; flex-direction: column; min-height: 100vh; }
 
         /* HEADER */
+        /* ===== HAMBURGER BUTTON ===== */
+        .hggsp-menu-btn {
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .hggsp-menu-btn:hover { background: rgba(254,44,85,0.12); border-color: rgba(254,44,85,0.3); }
+        .hggsp-menu-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 18px;
+        }
+        .hggsp-menu-icon span {
+            display: block;
+            height: 2px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hggsp-menu-btn.active .hggsp-menu-icon span:nth-child(1) { transform: rotate(45deg) translateY(8.5px); }
+        .hggsp-menu-btn.active .hggsp-menu-icon span:nth-child(2) { opacity: 0; }
+        .hggsp-menu-btn.active .hggsp-menu-icon span:nth-child(3) { transform: rotate(-45deg) translateY(-8.5px); }
+
+        /* ===== SIDEBAR OVERLAY ===== */
+        .hggsp-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .hggsp-overlay.active { opacity: 1; pointer-events: all; }
+
+        /* ===== SIDEBAR PANEL ===== */
+        .hggsp-sidebar {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 280px;
+            background: #0e0e0e;
+            border-left: 1px solid rgba(255,255,255,0.07);
+            box-shadow: -24px 0 64px rgba(0,0,0,0.7);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .hggsp-sidebar::-webkit-scrollbar { display: none; }
+        .hggsp-sidebar.active { transform: translateX(0); }
+
+        /* Sidebar header */
+        .hggsp-sb-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 18px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            flex-shrink: 0;
+        }
+        .hggsp-sb-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hggsp-sb-brand-icon {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #fe2c55, #ff7a45);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 12px rgba(254,44,85,0.35);
+        }
+        .hggsp-sb-brand-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 15px; font-weight: 800;
+            color: #fff;
+            letter-spacing: 0.03em;
+        }
+        .hggsp-sb-close {
+            width: 30px; height: 30px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .hggsp-sb-close:hover { background: rgba(255,255,255,0.09); color: #fff; }
+
+        /* Workspace user row */
+        .hggsp-sb-user {
+            margin: 12px 12px 4px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 11px 13px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .hggsp-sb-user:hover { background: rgba(255,255,255,0.07); }
+        .hggsp-sb-avatar {
+            width: 30px; height: 30px;
+            background: linear-gradient(135deg, #fe2c55, #ff7a45);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0;
+            overflow: hidden;
+        }
+        .hggsp-sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .hggsp-sb-username {
+            flex: 1;
+            font-size: 13px; font-weight: 600; color: #fff;
+        }
+        .hggsp-sb-role-badge {
+            font-size: 10px; font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .hggsp-sb-role-badge.prof {
+            background: rgba(254,44,85,0.15);
+            color: #fe2c55;
+            border: 1px solid rgba(254,44,85,0.3);
+        }
+        .hggsp-sb-role-badge.eleve {
+            background: rgba(37,244,238,0.1);
+            color: #25f4ee;
+            border: 1px solid rgba(37,244,238,0.25);
+        }
+
+        /* Nav sections */
+        .hggsp-sb-nav { padding: 8px 12px; flex: 1; }
+        .hggsp-sb-section {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.3);
+            padding: 10px 10px 4px;
+        }
+        .hggsp-sb-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 6px 10px;
+        }
+
+        /* Nav items */
+        .hggsp-nav-item {
+            width: 100%; background: transparent; border: none;
+            color: rgba(255,255,255,0.55);
+            padding: 0; border-radius: 10px;
+            cursor: pointer; font-family: 'DM Sans', sans-serif;
+            display: flex; align-items: center;
+            text-align: left; margin: 1px 0;
+            position: relative;
+        }
+        .hggsp-nav-inner {
+            display: flex; align-items: center; gap: 11px;
+            width: 100%; padding: 10px 12px;
+            border-radius: 10px;
+            transition: color 0.15s, background 0.15s;
+        }
+        /* Only nav-lit does the highlight — exactly like SCRIX */
+        .hggsp-nav-item.nav-lit .hggsp-nav-inner {
+            background: linear-gradient(90deg,
+                rgba(254,44,85,0.06) 0%,
+                rgba(254,44,85,0.06) 45%,
+                rgba(254,44,85,0.22) 85%,
+                rgba(254,44,85,0.45) 100%
+            );
+            color: #fff;
+        }
+        .hggsp-nav-item.nav-fade-out .hggsp-nav-inner {
+            background: transparent;
+            color: rgba(255,255,255,0.55);
+            transition: background 0.2s, color 0.2s;
+        }
+        .hggsp-nav-icon {
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 16px;
+            opacity: 0.6; transition: opacity 0.15s;
+        }
+        .hggsp-nav-item:hover .hggsp-nav-icon,
+        .hggsp-nav-item.active .hggsp-nav-icon { opacity: 1; }
+        .hggsp-nav-text { flex: 1; font-size: 14px; font-weight: 500; }
+        .hggsp-nav-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .hggsp-nav-item.nav-lit .hggsp-nav-dot { opacity: 1; }
+
+        /* Sidebar footer */
+        .hggsp-sb-footer {
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 10px 12px;
+            flex-shrink: 0;
+        }
+        .hggsp-sb-logout {
+            width: 100%; background: transparent; border: none;
+            color: rgba(255,255,255,0.45);
+            padding: 0; border-radius: 10px;
+            cursor: pointer; font-family: 'DM Sans', sans-serif;
+            display: flex; align-items: center; margin: 1px 0;
+        }
+        .hggsp-sb-logout:hover .hggsp-nav-inner { background: rgba(254,44,85,0.1); color: #fe2c55; }
+        .hggsp-sb-logout .hggsp-nav-icon { opacity: 0.5; }
+        .hggsp-sb-logout:hover .hggsp-nav-icon { opacity: 1; }
+
         header {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -593,6 +825,122 @@
             font-size: 4rem; overflow: hidden;
         }
         .post-card-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .post-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* Photo carousel on cards */
+        .card-photo-carousel {
+            position: relative; width: 100%; height: 100%;
+        }
+        .card-photo-carousel .cpc-img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .cpc-dots {
+            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 4px; z-index: 5;
+        }
+        .cpc-dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: rgba(255,255,255,0.45); transition: background 0.2s;
+        }
+        .cpc-dot.active { background: #fff; }
+
+        /* Photo count badge */
+        .card-photo-count {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            font-size: 11px; font-weight: 700;
+            padding: 3px 8px; border-radius: 20px;
+            display: flex; align-items: center; gap: 4px;
+            z-index: 5;
+        }
+
+        /* Modal photo carousel */
+        .modal-photo-carousel {
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: #000;
+        }
+        .mpc-slide {
+            width: 100%; height: 100%;
+            display: none; align-items: center; justify-content: center;
+        }
+        .mpc-slide.active { display: flex; }
+        .mpc-slide img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+        }
+        .mpc-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 36px; height: 36px;
+            background: rgba(0,0,0,0.55); border: none;
+            border-radius: 50%; color: #fff; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            z-index: 10; transition: background 0.2s;
+        }
+        .mpc-btn:hover { background: rgba(0,0,0,0.85); }
+        .mpc-prev { left: 10px; }
+        .mpc-next { right: 10px; }
+        .mpc-counter {
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 6px; z-index: 10;
+        }
+        .mpc-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: rgba(255,255,255,0.35); transition: all 0.2s; cursor: pointer;
+        }
+        .mpc-dot.active { background: #fff; transform: scale(1.2); }
+
+        /* Photo upload grid preview */
+        .photo-upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .photo-upload-zone:hover { border-color: var(--accent); background: rgba(254,44,85,0.05); }
+        .photo-upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .photo-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .photo-preview-item {
+            position: relative; aspect-ratio: 1;
+            border-radius: 8px; overflow: hidden;
+        }
+        .photo-preview-item img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .photo-preview-remove {
+            position: absolute; top: 4px; right: 4px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(0,0,0,0.7); color: #fff;
+            border: none; cursor: pointer; font-size: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Media type selector */
+        .media-type-tabs {
+            display: flex; gap: 8px; margin-bottom: 12px;
+        }
+        .media-type-tab {
+            flex: 1; padding: 9px;
+            background: var(--surface2); border: 1.5px solid var(--border);
+            border-radius: 10px; color: var(--text2);
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s; text-align: center;
+        }
+        .media-type-tab.active {
+            border-color: var(--accent); color: var(--accent);
+            background: rgba(254,44,85,0.08);
+        }
         .post-card-thumb-overlay {
             position: absolute; inset: 0;
             background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 55%, transparent 100%);
@@ -2298,42 +2646,106 @@
     <header>
         <div class="header-inner">
             <div class="logo">HGGSP</div>
-            <nav>
-                <button class="nav-btn active" onclick="switchTab('home', this)">
-                    <span style="font-size:1rem">🏠</span>
-                    <span>Home</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <button class="nav-btn" onclick="switchTab('blog', this)">
-                    <span style="font-size:1rem">📚</span>
-                    <span>Blog</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <button class="nav-btn" id="searchNavBtn" onclick="switchTab('search', this)">
-                    <span style="font-size:1rem">🔍</span>
-                    <span>Recherche</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <button class="nav-btn" onclick="switchTab('upload', this)">
-                    <span style="font-size:1rem">➕</span>
-                    <span>Publier</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <button class="nav-btn" onclick="switchTab('messages', this)">
-                    <span style="font-size:1rem">💬</span>
-                    <span>Messages</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <button class="nav-btn" onclick="switchTab('profile', this)">
-                    <span style="font-size:1rem">👤</span>
-                    <span>Profil</span>
-                    <div class="nav-dot"></div>
-                </button>
-                <span id="navRoleBadge" style="display:flex;align-items:center;padding:0 0.25rem;"></span>
-
-            </nav>
+            <button class="hggsp-menu-btn" id="hggspMenuBtn" onclick="hggspToggleMenu()" aria-label="Menu">
+                <span class="hggsp-menu-icon">
+                    <span></span><span></span><span></span>
+                </span>
+            </button>
         </div>
     </header>
+
+    <!-- Overlay -->
+    <div class="hggsp-overlay" id="hggspOverlay" onclick="hggspCloseMenu()"></div>
+
+    <!-- Sidebar -->
+    <div class="hggsp-sidebar" id="hggspSidebar">
+
+        <!-- Header -->
+        <div class="hggsp-sb-header">
+            <div class="hggsp-sb-brand">
+                <div class="hggsp-sb-brand-icon">⚡</div>
+                <span class="hggsp-sb-brand-name">HGGSP</span>
+            </div>
+            <button class="hggsp-sb-close" onclick="hggspCloseMenu()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- User row -->
+        <div class="hggsp-sb-user" onclick="hggspCloseMenu(); switchTab('profile', null);">
+            <div class="hggsp-sb-avatar" id="sbAvatar">👤</div>
+            <span class="hggsp-sb-username" id="sbUsername">Mon Profil</span>
+            <span class="hggsp-sb-role-badge eleve" id="sbRoleBadge">Élève</span>
+        </div>
+
+        <!-- Nav -->
+        <div class="hggsp-sb-nav">
+
+            <div class="hggsp-sb-section">Navigation</div>
+
+            <button class="hggsp-nav-item active" id="sbNavHome" onclick="hggspCloseMenu(); switchTab('home', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">🏠</span>
+                    <span class="hggsp-nav-text">Home</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+            <button class="hggsp-nav-item" id="sbNavBlog" onclick="hggspCloseMenu(); switchTab('blog', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">📚</span>
+                    <span class="hggsp-nav-text">Blog</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+            <button class="hggsp-nav-item" id="sbNavSearch" onclick="hggspCloseMenu(); switchTab('search', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">🔍</span>
+                    <span class="hggsp-nav-text">Recherche</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+
+            <div class="hggsp-sb-divider"></div>
+            <div class="hggsp-sb-section">Actions</div>
+
+            <button class="hggsp-nav-item" id="sbNavUpload" onclick="hggspCloseMenu(); switchTab('upload', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">➕</span>
+                    <span class="hggsp-nav-text">Publier</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+            <button class="hggsp-nav-item" id="sbNavMessages" onclick="hggspCloseMenu(); switchTab('messages', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">💬</span>
+                    <span class="hggsp-nav-text">Messages</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+            <button class="hggsp-nav-item" id="sbNavProfile" onclick="hggspCloseMenu(); switchTab('profile', this);">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">👤</span>
+                    <span class="hggsp-nav-text">Profil</span>
+                    <span class="hggsp-nav-dot"></span>
+                </div>
+            </button>
+
+
+        </div>
+
+        <!-- Footer logout -->
+        <div class="hggsp-sb-footer">
+            <button class="hggsp-sb-logout" onclick="hggspCloseMenu(); handleLogout();">
+                <div class="hggsp-nav-inner">
+                    <span class="hggsp-nav-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </span>
+                    <span class="hggsp-nav-text">Se déconnecter</span>
+                </div>
+            </button>
+        </div>
+
+    </div>
 
     <div class="page-wrapper">
         <!-- HOME -->
@@ -2938,6 +3350,20 @@
 
         <div class="sp-divider"></div>
 
+        <!-- SÉCURITÉ -->
+        <div class="sp-section-label">SÉCURITÉ</div>
+        <button class="sp-item" onclick="sendPasswordReset()">
+            <div class="sp-item-inner">
+                <span class="sp-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                </span>
+                <span class="sp-item-text">Changer le mot de passe</span>
+                <span style="font-size:0.72rem;color:var(--text3);margin-left:auto;">Email de vérification</span>
+            </div>
+        </button>
+
+        <div class="sp-divider"></div>
+
         <!-- SESSION -->
         <div class="sp-section-label">SESSION</div>
         <button class="sp-item sp-danger" onclick="closeSettings();handleLogout()">
@@ -3018,6 +3444,20 @@
         } catch(e) { console.warn('Firestore read error:', e); }
 
         if (userDoc && userDoc.username) {
+            // ── Clear any leftover session from a different account ──
+            const prevSession = localStorage.getItem('hggsp_session');
+            if (prevSession) {
+                try {
+                    const { currentUser: cu } = JSON.parse(prevSession);
+                    if (cu && cu.id !== firebaseUser.uid) {
+                        // Different user — wipe local data
+                        localStorage.removeItem('hggsp_session');
+                        localStorage.removeItem('hggsp_posts');
+                        localStorage.removeItem('hggsp_deleted_posts');
+                        posts = [...defaultDemoPosts()];
+                    }
+                } catch(e) {}
+            }
             // Existing user — log in directly
             currentUser = {
                 id: firebaseUser.uid,
@@ -3068,12 +3508,31 @@
         if (usernameRaw.length < 3) { showToast("Le pseudo doit faire au moins 3 caractères", 'error'); return; }
 
         const handle = '@' + usernameRaw;
-        // Check duplicate
+        // Check duplicate username
         const taken = posts.some(p => p.username.toLowerCase() === handle.toLowerCase());
         if (taken) { showToast("Ce pseudo est déjà pris ❌", 'error'); return; }
 
         const firebaseUser = window._pendingGoogleUser;
         if (!firebaseUser) return;
+
+        // ── Check if this email already has an account (different UID) ──
+        try {
+            const db = window._firebaseDb;
+            const { collection, getDocs } = window._firebaseFns;
+            const usersSnap = await getDocs(collection(db, 'users'));
+            for (const d of usersSnap.docs) {
+                const data = d.data();
+                if (data.email === firebaseUser.email && d.id !== firebaseUser.uid) {
+                    showToast("Un compte existe déjà avec cet email ❌ Connecte-toi à ton compte existant.", 'error');
+                    document.getElementById('googleProfileModal').style.display = 'none';
+                    window._pendingGoogleUser = null;
+                    if (window._firebaseAuth && window._firebaseFns.signOut) {
+                        window._firebaseFns.signOut(window._firebaseAuth).catch(()=>{});
+                    }
+                    return;
+                }
+            }
+        } catch(e) { console.warn('Email check error:', e); }
 
         currentUser = {
             id: firebaseUser.uid,
@@ -3113,7 +3572,8 @@
         try {
             const db = window._firebaseDb;
             const { doc, setDoc } = window._firebaseFns;
-            const postToSave = { ...post, videoSrc: null }; // can't save blob URLs
+            // videoSrc is now a permanent Firebase Storage URL (not a blob), safe to save
+            const postToSave = { ...post };
             await setDoc(doc(db, 'posts', String(post.id)), postToSave);
         } catch(e) { console.warn('Post save error:', e); }
     }
@@ -3124,9 +3584,13 @@
             const { collection, getDocs, query, orderBy } = window._firebaseFns;
             const q = query(collection(db, 'posts'), orderBy('id', 'desc'));
             const snap = await getDocs(q);
+            // Load deleted post IDs from localStorage to avoid re-adding them
+            const deletedIds = JSON.parse(localStorage.getItem('hggsp_deleted_posts') || '[]');
             snap.forEach(docSnap => {
                 const sp = docSnap.data();
                 if (!sp || !sp.id) return;
+                // Skip posts that were deleted by this user
+                if (deletedIds.includes(sp.id)) return;
                 if (!posts.find(p => p.id === sp.id)) {
                     posts.unshift(sp);
                 } else {
@@ -3184,7 +3648,8 @@
     let currentUser = null;
     const validCodes = { 'ABC123XYZ456': false, 'DEF789QWE234': false, 'GHI567RTE890': false };
 
-    let posts = [
+    function defaultDemoPosts() {
+        return [
         {
             id: 1, author: 'Prof HGGSP', username: '@profhggsp', avatar: '👨‍🏫',
             title: 'Enjeux Géopolitiques du 21e Siècle',
@@ -3226,7 +3691,9 @@
             hashtags: ['#puissances', '#usa', '#chine', '#russie', '#hggsp'],
             commentList: [], saves: 87, reposts: 34, authorId: 'prof'
         }
-    ];
+    ]; }
+
+    let posts = defaultDemoPosts();
 
     let userProfile = { username: 'user', email: 'user@example.com', avatar: '👤', canPublish: false, posts: [], likedPosts: [], following: [], repostedPosts: [], likedVisible: true };
 
@@ -3245,14 +3712,14 @@
             // Save user session
             localStorage.setItem('hggsp_session', JSON.stringify({ currentUser, userProfile }));
             // Save posts (without videoSrc blob URLs which die on reload)
-            const postsToSave = posts.map(p => ({ ...p, videoSrc: null }));
+            const postsToSave = posts.map(p => ({ ...p, videoSrc: (p.videoSrc && p.videoSrc.startsWith('blob:')) ? null : p.videoSrc }));
             localStorage.setItem('hggsp_posts', JSON.stringify(postsToSave));
         } catch(e) { console.warn('Save failed:', e); }
     }
 
     function savePosts() {
         try {
-            const postsToSave = posts.map(p => ({ ...p, videoSrc: null }));
+            const postsToSave = posts.map(p => ({ ...p, videoSrc: (p.videoSrc && p.videoSrc.startsWith('blob:')) ? null : p.videoSrc }));
             localStorage.setItem('hggsp_posts', JSON.stringify(postsToSave));
         } catch(e) {}
     }
@@ -3263,6 +3730,8 @@
             if (!session) return false;
             const { currentUser: cu, userProfile: up } = JSON.parse(session);
             if (!cu || !cu.id) return false;
+            // If Firebase auth is available, only auto-restore if user matches
+            // (will be overridden by onAuthStateChanged for Google users)
             currentUser = cu;
             userProfile = { ...userProfile, ...up };
             return true;
@@ -3384,6 +3853,22 @@
         }
     }
 
+    async function sendPasswordReset() {
+        const email = currentUser && currentUser.email;
+        if (!email) { showToast("Aucun email associé à ce compte", 'error'); return; }
+        try {
+            const auth = window._firebaseAuth;
+            const { sendPasswordResetEmail } = window._firebaseFns;
+            if (!auth || !sendPasswordResetEmail) { showToast("Fonction non disponible", 'error'); return; }
+            await sendPasswordResetEmail(auth, email);
+            showToast(`Email envoyé à ${email} 📧 Vérifie ta boîte mail !`, 'success');
+            closeSettings();
+        } catch(e) {
+            if (e.code === 'auth/user-not-found') showToast("Email introuvable", 'error');
+            else showToast("Erreur : " + e.message, 'error');
+        }
+    }
+
     function handleLogout() {
         // Sign out from Firebase if Google user
         if (currentUser && currentUser.isGoogleUser && window._firebaseAuth) {
@@ -3392,7 +3877,13 @@
         }
         currentUser = null;
         window._googleLoginHandled = false;
+        // Clear session AND posts so next user starts with a clean state
         localStorage.removeItem('hggsp_session');
+        localStorage.removeItem('hggsp_posts');
+        localStorage.removeItem('hggsp_deleted_posts');
+        // Reset in-memory posts to demo posts only
+        posts = defaultDemoPosts();
+        userProfile = { username: 'user', email: 'user@example.com', avatar: '👤', canPublish: false, posts: [], likedPosts: [], following: [], repostedPosts: [], likedVisible: true };
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('appScreen').style.display = 'none';
         document.getElementById('appScreen').className = 'app-container';
@@ -3403,6 +3894,7 @@
         const app = document.getElementById('appScreen');
         app.style.display = 'flex';
         app.className = 'app-container active';
+        setTimeout(hggspRefreshUser, 100);
         // Show role badge in nav
         const roleBadgeNav = document.getElementById('navRoleBadge');
         if (roleBadgeNav && currentUser) {
@@ -3416,12 +3908,138 @@
     }
 
     // ── TAB ──
+    // ===== HGGSP SIDEBAR MENU =====
+    function hggspToggleMenu() {
+        const sidebar = document.getElementById('hggspSidebar');
+        const overlay = document.getElementById('hggspOverlay');
+        const btn = document.getElementById('hggspMenuBtn');
+        const isOpen = sidebar.classList.contains('active');
+        if (isOpen) {
+            hggspCloseMenu();
+        } else {
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            btn.classList.add('active');
+            document.body.style.overflow = 'hidden'; // hide body scrollbar
+            hggspRefreshUser();
+            setTimeout(hggspInitGlider, 50);
+        }
+    }
+
+    function hggspCloseMenu() {
+        document.getElementById('hggspSidebar').classList.remove('active');
+        document.getElementById('hggspOverlay').classList.remove('active');
+        document.getElementById('hggspMenuBtn').classList.remove('active');
+        document.body.style.overflow = ''; // restore scrollbar
+    }
+
+    // Update user info in sidebar
+    function hggspRefreshUser() {
+        const sbAvatar = document.getElementById('sbAvatar');
+        const sbUsername = document.getElementById('sbUsername');
+        const sbRole = document.getElementById('sbRoleBadge');
+        if (!sbAvatar || !sbUsername) return;
+        if (userProfile.avatarImg) {
+            sbAvatar.innerHTML = `<img src="${userProfile.avatarImg}" onerror="this.parentElement.textContent='${userProfile.avatar || '👤'}'">`;
+        } else {
+            sbAvatar.textContent = userProfile.avatar || '👤';
+        }
+        sbUsername.textContent = userProfile.displayName || userProfile.username || 'Mon Profil';
+        if (sbRole) {
+            const isProf = currentUser && currentUser.role === 'prof';
+            sbRole.textContent = isProf ? 'Prof' : 'Élève';
+            sbRole.className = 'hggsp-sb-role-badge ' + (isProf ? 'prof' : 'eleve');
+        }
+    }
+
+    // Map tab names to sidebar item IDs
+    const _sbTabMap = {
+        home: 'sbNavHome',
+        blog: 'sbNavBlog',
+        search: 'sbNavSearch',
+        upload: 'sbNavUpload',
+        messages: 'sbNavMessages',
+        profile: 'sbNavProfile'
+    };
+
+    function hggspSetActive(tabName) {
+        // Remove active + nav-lit from all
+        document.querySelectorAll('.hggsp-nav-item').forEach(el => {
+            el.classList.remove('active');
+            el.classList.remove('nav-lit');
+        });
+        const id = _sbTabMap[tabName];
+        if (id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('active');
+                el.classList.add('nav-lit'); // light it up immediately
+            }
+        }
+    }
+
+    // ── SCRIX-style glider: single nav-lit class that moves ──
+    let _hggspReturnTimer = null;
+
+    function hggspInitGlider() {
+        const nav = document.querySelector('.hggsp-sb-nav');
+        if (!nav || nav._gliderInited) return;
+        nav._gliderInited = true;
+
+        const items = nav.querySelectorAll('.hggsp-nav-item');
+
+        // Light up the active item on init
+        const activeItem = nav.querySelector('.hggsp-nav-item.active');
+        if (activeItem) activeItem.classList.add('nav-lit');
+
+        items.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                // Cancel any pending return
+                if (_hggspReturnTimer) { clearTimeout(_hggspReturnTimer); _hggspReturnTimer = null; }
+                // Remove nav-lit from all with a fade-out effect
+                items.forEach(i => {
+                    if (i.classList.contains('nav-lit')) {
+                        i.classList.remove('nav-lit');
+                        i.classList.add('nav-fade-out');
+                        setTimeout(() => i.classList.remove('nav-fade-out'), 200);
+                    }
+                });
+                // Immediately light up hovered item
+                item.classList.add('nav-lit');
+            });
+
+            item.addEventListener('mouseleave', () => {
+                const active = nav.querySelector('.hggsp-nav-item.active');
+                // Fade out hovered item
+                item.classList.remove('nav-lit');
+                // Return to active after 200ms (matches CSS transition)
+                _hggspReturnTimer = setTimeout(() => {
+                    if (active) active.classList.add('nav-lit');
+                    _hggspReturnTimer = null;
+                }, 200);
+            });
+
+            item.addEventListener('click', () => {
+                // Move active + nav-lit to clicked item
+                items.forEach(i => { i.classList.remove('active'); i.classList.remove('nav-lit'); });
+                item.classList.add('active');
+                item.classList.add('nav-lit');
+            });
+        });
+    }
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hggspCloseMenu();
+    });
+
+    // ===== END SIDEBAR =====
+
     function switchTab(tabName, btnEl) {
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         const tab = document.getElementById(tabName + 'Tab');
         if (tab) tab.classList.add('active');
-        if (btnEl) btnEl.classList.add('active');
+        hggspSetActive(tabName);
         if (tabName === 'blog') renderPosts();
         if (tabName === 'upload') updateUploadTab();
         if (tabName === 'profile') updateProfileTab();
@@ -3509,14 +4127,25 @@
             const avatarContent = post.avatarImg
                 ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
                 : (post.avatar || '👤');
+            // Build thumbnail for card
+            let thumbHTML = '';
+            if (post.photos && post.photos.length > 0) {
+                const multiDots = post.photos.length > 1 ? `<div class="cpc-dots">${post.photos.slice(0,5).map((_,i)=>`<div class="cpc-dot${i===0?' active':''}"></div>`).join('')}</div>` : '';
+                const countBadge = post.photos.length > 1 ? `<div class="card-photo-count">📷 ${post.photos.length}</div>` : '';
+                thumbHTML = `<div class="card-photo-carousel" data-postid="${post.id}" data-idx="0">
+                    <img class="cpc-img" src="${post.photos[0]}" alt="photo">
+                    ${countBadge}${multiDots}
+                </div>`;
+            } else if (post.videoSrc) {
+                thumbHTML = `<video src="${post.videoSrc}" muted preload="metadata"></video>`;
+            } else {
+                thumbHTML = `<span style="font-size:4rem;line-height:1;">${post.video || '📄'}</span>`;
+            }
             card.innerHTML = `
                 <div class="post-card-thumb">
-                    ${post.videoSrc
-                        ? `<video src="${post.videoSrc}" muted preload="metadata"></video>`
-                        : `<span style="font-size:4rem;line-height:1;">${post.video || '📄'}</span>`
-                    }
+                    ${thumbHTML}
                     <div class="post-card-thumb-overlay"></div>
-                    <div class="post-card-play">▶</div>
+                    ${!post.photos || post.photos.length === 0 ? '<div class="post-card-play">▶</div>' : ''}
                     <div class="post-card-views">▶ ${formatNum(post.views || 0)}</div>
                 </div>
                 <div class="post-card-body">
@@ -3533,6 +4162,34 @@
             c.appendChild(card);
         });
     }
+
+    // ── MODAL PHOTO CAROUSEL ──
+    function mpcGoTo(idx) {
+        const slides = document.querySelectorAll('.mpc-slide');
+        const dots = document.querySelectorAll('.mpc-dot');
+        if (!slides.length) return;
+        slides.forEach(s => s.classList.remove('active'));
+        dots.forEach(d => d.classList.remove('active'));
+        window._mpcIdx = idx;
+        if (slides[idx]) slides[idx].classList.add('active');
+        if (dots[idx]) dots[idx].classList.add('active');
+    }
+    function mpcPrev() {
+        const idx = ((window._mpcIdx || 0) - 1 + (window._mpcTotal || 1)) % (window._mpcTotal || 1);
+        mpcGoTo(idx);
+    }
+    function mpcNext() {
+        const idx = ((window._mpcIdx || 0) + 1) % (window._mpcTotal || 1);
+        mpcGoTo(idx);
+    }
+
+    // Swipe support on modal carousel
+    document.addEventListener('touchstart', e => { window._touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+        if (!document.getElementById('mpc')) return;
+        const dx = e.changedTouches[0].clientX - (window._touchStartX || 0);
+        if (Math.abs(dx) > 50) dx < 0 ? mpcNext() : mpcPrev();
+    }, { passive: true });
 
     function formatNum(n) {
         if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -3588,7 +4245,20 @@
 
         // Media
         const mediaEl = document.getElementById('pmMedia');
-        if (post.videoSrc) {
+        if (post.photos && post.photos.length > 0) {
+            const slides = post.photos.map((url, i) => `
+                <div class="mpc-slide${i===0?' active':''}">
+                    <img src="${url}" alt="Photo ${i+1}" style="max-width:100%;max-height:100%;object-fit:contain;">
+                </div>`).join('');
+            const dots = post.photos.map((_, i) => `<div class="mpc-dot${i===0?' active':''}" onclick="mpcGoTo(${i})"></div>`).join('');
+            const navBtns = post.photos.length > 1 ? `
+                <button class="mpc-btn mpc-prev" onclick="mpcPrev()">‹</button>
+                <button class="mpc-btn mpc-next" onclick="mpcNext()">›</button>
+                <div class="mpc-counter">${dots}</div>` : '';
+            mediaEl.innerHTML = `<div class="modal-photo-carousel" id="mpc">${slides}${navBtns}</div>`;
+            window._mpcIdx = 0;
+            window._mpcTotal = post.photos.length;
+        } else if (post.videoSrc) {
             mediaEl.innerHTML = `<video src="${post.videoSrc}" controls autoplay style="width:100%;height:100%;object-fit:contain;"></video>`;
         } else {
             mediaEl.innerHTML = `<span class="post-modal-media-emoji">${post.video || '📄'}</span>`;
@@ -4146,16 +4816,33 @@
                             <div id="hashtagPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:20px;"></div>
                         </div>
                         <div class="form-group" style="margin-top:1rem;">
-                            <label>Vidéo (optionnel)</label>
-                            <div class="video-upload-zone" id="videoDropZone">
-                                <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoSelect(event)">
-                                <div class="upload-icon">🎬</div>
-                                <div class="upload-label">Clique ou glisse ta vidéo ici</div>
-                                <div class="upload-hint">MP4, MOV, WebM — max 100 Mo</div>
+                            <label>Média (optionnel)</label>
+                            <div class="media-type-tabs">
+                                <button class="media-type-tab active" onclick="switchMediaType('photo', this)" type="button">📷 Photos</button>
+                                <button class="media-type-tab" onclick="switchMediaType('video', this)" type="button">🎬 Vidéo</button>
                             </div>
-                            <div id="videoPreviewWrap" style="display:none;margin-top:1rem;" class="video-preview-wrap">
-                                <video id="videoPreview" controls></video>
-                                <button class="remove-video-btn" onclick="removeVideo()" title="Supprimer">✕</button>
+                            <!-- PHOTO UPLOAD -->
+                            <div id="photoUploadSection">
+                                <div class="photo-upload-zone" id="photoDropZone">
+                                    <input type="file" id="photoFileInput" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+                                    <div class="upload-icon">📷</div>
+                                    <div class="upload-label">Clique ou glisse tes photos ici</div>
+                                    <div class="upload-hint">JPG, PNG, WebP — jusqu'à 10 photos</div>
+                                </div>
+                                <div id="photoPreviewGrid" class="photo-preview-grid" style="display:none;"></div>
+                            </div>
+                            <!-- VIDEO UPLOAD -->
+                            <div id="videoUploadSection" style="display:none;">
+                                <div class="video-upload-zone" id="videoDropZone">
+                                    <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoSelect(event)">
+                                    <div class="upload-icon">🎬</div>
+                                    <div class="upload-label">Clique ou glisse ta vidéo ici</div>
+                                    <div class="upload-hint">MP4, MOV, WebM — max 100 Mo</div>
+                                </div>
+                                <div id="videoPreviewWrap" style="display:none;margin-top:1rem;" class="video-preview-wrap">
+                                    <video id="videoPreview" controls></video>
+                                    <button class="remove-video-btn" onclick="removeVideo()" title="Supprimer">✕</button>
+                                </div>
                             </div>
                         </div>
                         <div class="checkbox-row" style="margin-top:1rem;">
@@ -4181,20 +4868,94 @@
         updateUploadTab();
     }
 
-    function publishPost() {
+    async function publishPost() {
         const title = document.getElementById('postTitle').value.trim();
         const desc = document.getElementById('postDesc').value.trim();
         const rawTags = document.getElementById('postHashtags') ? document.getElementById('postHashtags').value.trim() : '';
         if (!title) { showToast('Titre obligatoire ⚠️', 'error'); return; }
         // Parse hashtags
         const hashtags = rawTags.split(/\s+/).filter(t => t.startsWith('#') && t.length > 1);
-        // Use selectedVideoURL (object URL from file input)
-        const videoSrc = selectedVideoURL || null;
+
+        // Disable publish button to prevent double-click
+        const publishBtn = document.querySelector('.publish-form .btn-primary');
+        if (publishBtn) { publishBtn.disabled = true; publishBtn.textContent = 'Publication...'; }
+
+        let permanentVideoURL = null;
+
+        // Upload video to Firebase Storage if a file was selected
+        if (selectedVideoFile && window._firebaseStorage && window._firebaseStorageFns) {
+            try {
+                showToast('Upload de la vidéo en cours... 🎬', 'success');
+                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
+                const storage = window._firebaseStorage;
+                const fileName = `videos/${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                const storageRef = ref(storage, fileName);
+                
+                // Upload with progress
+                await new Promise((resolve, reject) => {
+                    const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
+                    uploadTask.on('state_changed',
+                        (snapshot) => {
+                            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                            if (publishBtn) publishBtn.textContent = `Upload ${progress}%...`;
+                        },
+                        (error) => reject(error),
+                        async () => {
+                            permanentVideoURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            resolve();
+                        }
+                    );
+                });
+                showToast('Vidéo uploadée ✅', 'success');
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('Erreur upload vidéo ❌', 'error');
+                if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
+                return;
+            }
+        }
+
+        // Upload photos if any (stored as blob URLs for now - same as video situation)
+        // Photos use blob URLs locally; for persistence we store them in Firebase Storage
+        let photosData = [];
+        if (selectedPhotos.length > 0 && window._firebaseStorage && window._firebaseStorageFns) {
+            try {
+                showToast(`Upload de ${selectedPhotos.length} photo(s)... 📷`, 'success');
+                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
+                const storage = window._firebaseStorage;
+                for (let i = 0; i < selectedPhotos.length; i++) {
+                    const photo = selectedPhotos[i];
+                    const ext = photo.file.name.split('.').pop();
+                    const fileName = `photos/${Date.now()}_${i}.${ext}`;
+                    const storageRef = ref(storage, fileName);
+                    if (publishBtn) publishBtn.textContent = `Photo ${i+1}/${selectedPhotos.length}...`;
+                    const url = await new Promise((resolve, reject) => {
+                        const task = uploadBytesResumable(storageRef, photo.file);
+                        task.on('state_changed', null, reject, async () => {
+                            resolve(await getDownloadURL(task.snapshot.ref));
+                        });
+                    });
+                    photosData.push(url);
+                }
+                showToast('Photos uploadées ✅', 'success');
+            } catch(err) {
+                // Fallback to blob URLs (won't persist across sessions but visible now)
+                photosData = selectedPhotos.map(p => p.url);
+                console.warn('Photo upload error, using blob URLs:', err);
+            }
+        } else if (selectedPhotos.length > 0) {
+            // No Firebase - use blob URLs (local session only)
+            photosData = selectedPhotos.map(p => p.url);
+        }
+
+        const videoSrc = permanentVideoURL || null;
         const newPost = {
             id: Date.now(), author: userProfile.displayName || userProfile.username, username: userProfile.username.startsWith('@') ? userProfile.username : `@${userProfile.username}`,
             avatar: userProfile.avatar, avatarImg: userProfile.avatarImg || null, title, description: desc,
             likes: 0, comments: 0, views: 0, saves: 0, reposts: 0,
-            video: videoSrc ? null : '📄', videoSrc: videoSrc,
+            video: (videoSrc || photosData.length > 0) ? null : '📄',
+            videoSrc: videoSrc,
+            photos: photosData,
             hashtags: hashtags,
             timestamp: "à l'instant", isLiked: false, isSaved: false, commentList: [], authorId: currentUser.id,
             role: currentUser.role || 'eleve',
@@ -4202,7 +4963,9 @@
         };
         posts.unshift(newPost);
         userProfile.posts.unshift(newPost);
-        selectedVideoURL = null; // reset
+        selectedVideoURL = null;
+        selectedVideoFile = null;
+        selectedPhotos = [];
         saveSession();
         // Save to Firestore for Google users
         if (currentUser && currentUser.isGoogleUser) {
@@ -4210,6 +4973,7 @@
             saveUserToFirestore().catch(()=>{});
         }
         showToast('Post publié ! ✅', 'success');
+        if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
         const blogBtn = document.querySelector('.nav-btn:nth-child(2)');
         switchTab('blog', blogBtn);
     }
@@ -4226,12 +4990,14 @@
 
     // ── VIDEO UPLOAD ──
     let selectedVideoURL = null;
+    let selectedVideoFile = null; // Store the actual File object for Firebase upload
 
     function handleVideoSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
         if (file.size > 100 * 1024 * 1024) { showToast('Vidéo trop lourde (max 100 Mo)', 'error'); return; }
-        selectedVideoURL = URL.createObjectURL(file);
+        selectedVideoFile = file; // Keep the File object for upload
+        selectedVideoURL = URL.createObjectURL(file); // For local preview only
         const preview = document.getElementById('videoPreview');
         const wrap = document.getElementById('videoPreviewWrap');
         const zone = document.getElementById('videoDropZone');
@@ -4245,6 +5011,7 @@
 
     function removeVideo() {
         selectedVideoURL = null;
+        selectedVideoFile = null;
         const preview = document.getElementById('videoPreview');
         const wrap = document.getElementById('videoPreviewWrap');
         const zone = document.getElementById('videoDropZone');
@@ -4253,6 +5020,62 @@
         if (wrap) wrap.style.display = 'none';
         if (zone) zone.style.display = 'block';
         if (input) input.value = '';
+    }
+
+    // ── PHOTO UPLOAD ──
+    let selectedPhotos = []; // Array of {file, url} objects
+
+    function switchMediaType(type, btn) {
+        document.querySelectorAll('.media-type-tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        const photoSection = document.getElementById('photoUploadSection');
+        const videoSection = document.getElementById('videoUploadSection');
+        if (type === 'photo') {
+            if (photoSection) photoSection.style.display = 'block';
+            if (videoSection) videoSection.style.display = 'none';
+        } else {
+            if (photoSection) photoSection.style.display = 'none';
+            if (videoSection) videoSection.style.display = 'block';
+        }
+    }
+
+    function handlePhotoSelect(event) {
+        const files = Array.from(event.target.files);
+        if (!files.length) return;
+        const remaining = 10 - selectedPhotos.length;
+        const toAdd = files.slice(0, remaining);
+        if (files.length > remaining) showToast(`Max 10 photos — ${files.length - remaining} ignorée(s)`, 'info');
+        toAdd.forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            const url = URL.createObjectURL(file);
+            selectedPhotos.push({ file, url });
+        });
+        renderPhotoPreview();
+    }
+
+    function renderPhotoPreview() {
+        const grid = document.getElementById('photoPreviewGrid');
+        const zone = document.getElementById('photoDropZone');
+        if (!grid) return;
+        if (selectedPhotos.length === 0) {
+            grid.style.display = 'none';
+            if (zone) zone.style.display = 'block';
+            return;
+        }
+        if (zone) zone.style.display = selectedPhotos.length < 10 ? 'block' : 'none';
+        grid.style.display = 'grid';
+        grid.innerHTML = selectedPhotos.map((p, i) => `
+            <div class="photo-preview-item">
+                <img src="${p.url}" alt="Photo ${i+1}">
+                <button class="photo-preview-remove" onclick="removePhoto(${i})" title="Supprimer">✕</button>
+            </div>
+        `).join('');
+    }
+
+    function removePhoto(index) {
+        URL.revokeObjectURL(selectedPhotos[index].url);
+        selectedPhotos.splice(index, 1);
+        renderPhotoPreview();
     }
 
     // ── PROFILE EDIT ──
@@ -5141,12 +5964,28 @@
         renderPosts();
     }
 
-    function deletePost(postId) {
+    async function deletePost(postId) {
         if (activeTileMenu) { activeTileMenu.remove(); activeTileMenu = null; }
         if (!confirm('Supprimer cette publication définitivement ?')) return;
+
+        // Remove from local arrays
         posts = posts.filter(p => p.id !== postId);
         userProfile.posts = userProfile.posts.filter(p => p.id !== postId);
         saveSession();
+
+        // Save deleted post ID in localStorage so Firestore doesn't re-add it on reload
+        const deletedIds = JSON.parse(localStorage.getItem('hggsp_deleted_posts') || '[]');
+        if (!deletedIds.includes(postId)) { deletedIds.push(postId); }
+        localStorage.setItem('hggsp_deleted_posts', JSON.stringify(deletedIds));
+
+        // Delete from Firestore so it doesn't come back on reload
+        if (currentUser && currentUser.isGoogleUser && window._firebaseDb && window._firebaseFns) {
+            try {
+                const { doc, deleteDoc } = window._firebaseFns;
+                await deleteDoc(doc(window._firebaseDb, 'posts', String(postId)));
+            } catch(e) { console.warn('Firestore delete error:', e); }
+        }
+
         showToast('Publication supprimée 🗑️', 'success');
         renderProfileGrid();
         renderPosts();
