@@ -4905,10 +4905,43 @@
 
         let permanentVideoURL = null;
 
-        // Video: use blob URL directly (visible this session)
-        // Firebase Storage upload requires rules to be configured — skipped for now
-        if (selectedVideoFile && selectedVideoURL) {
-            permanentVideoURL = selectedVideoURL;
+        // ── FIREBASE STORAGE VIDEO UPLOAD ──
+        if (selectedVideoFile) {
+            try {
+                const storage = window._firebaseStorage;
+                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
+                if (storage && ref && uploadBytesResumable && getDownloadURL) {
+                    if (publishBtn) publishBtn.textContent = 'Upload vidéo... 0%';
+                    const userId = currentUser.id || 'anonymous';
+                    const fileName = `${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                    const storageRef = ref(storage, `videos/${userId}/${fileName}`);
+                    permanentVideoURL = await new Promise((resolve, reject) => {
+                        const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                                if (publishBtn) publishBtn.textContent = `Upload vidéo... ${pct}%`;
+                            },
+                            (error) => {
+                                console.error('Upload error:', error);
+                                reject(error);
+                            },
+                            async () => {
+                                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                                resolve(url);
+                            }
+                        );
+                    });
+                    showToast('Vidéo uploadée ✅', 'success');
+                } else {
+                    // Fallback: blob URL (session only)
+                    permanentVideoURL = selectedVideoURL;
+                }
+            } catch (err) {
+                console.error('Firebase Storage error:', err);
+                showToast('Erreur upload vidéo, utilisation locale', 'error');
+                permanentVideoURL = selectedVideoURL; // fallback
+            }
         }
 
         // Convert photos to base64 — works for everyone, no Firebase Storage needed
