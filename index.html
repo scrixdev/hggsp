@@ -4883,69 +4883,49 @@
         let permanentVideoURL = null;
 
         // Upload video to Firebase Storage if a file was selected
-        if (selectedVideoFile && window._firebaseStorage && window._firebaseStorageFns) {
-            try {
-                showToast('Upload de la vidéo en cours... 🎬', 'success');
-                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
-                const storage = window._firebaseStorage;
-                const fileName = `videos/${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-                const storageRef = ref(storage, fileName);
-                
-                // Upload with progress
-                await new Promise((resolve, reject) => {
-                    const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                            if (publishBtn) publishBtn.textContent = `Upload ${progress}%...`;
-                        },
-                        (error) => reject(error),
-                        async () => {
-                            permanentVideoURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            resolve();
-                        }
-                    );
-                });
-                showToast('Vidéo uploadée ✅', 'success');
-            } catch (err) {
-                console.error('Upload error:', err);
-                showToast('Erreur upload vidéo ❌', 'error');
-                if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
-                return;
+        if (selectedVideoFile) {
+            if (window._firebaseStorage && window._firebaseStorageFns) {
+                try {
+                    showToast('Upload de la vidéo en cours... 🎬', 'success');
+                    const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
+                    const storage = window._firebaseStorage;
+                    const fileName = `videos/${Date.now()}_${selectedVideoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+                    const storageRef = ref(storage, fileName);
+                    await new Promise((resolve, reject) => {
+                        const uploadTask = uploadBytesResumable(storageRef, selectedVideoFile);
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                                if (publishBtn) publishBtn.textContent = `Upload ${progress}%...`;
+                            },
+                            (error) => reject(error),
+                            async () => {
+                                permanentVideoURL = await getDownloadURL(uploadTask.snapshot.ref);
+                                resolve();
+                            }
+                        );
+                    });
+                    showToast('Vidéo uploadée ✅', 'success');
+                } catch (err) {
+                    console.warn('Firebase Storage indispo, fallback blob:', err);
+                    permanentVideoURL = selectedVideoURL;
+                    showToast('Vidéo publiée (session uniquement — active Firebase Storage pour la persistance)', 'info');
+                }
+            } else {
+                permanentVideoURL = selectedVideoURL;
+                showToast('Vidéo publiée localement 📱', 'info');
             }
         }
 
-        // Upload photos if any (stored as blob URLs for now - same as video situation)
-        // Photos use blob URLs locally; for persistence we store them in Firebase Storage
+        // Convert photos to base64 — works for everyone, no Firebase Storage needed
         let photosData = [];
-        if (selectedPhotos.length > 0 && window._firebaseStorage && window._firebaseStorageFns) {
-            try {
-                showToast(`Upload de ${selectedPhotos.length} photo(s)... 📷`, 'success');
-                const { ref, uploadBytesResumable, getDownloadURL } = window._firebaseStorageFns;
-                const storage = window._firebaseStorage;
-                for (let i = 0; i < selectedPhotos.length; i++) {
-                    const photo = selectedPhotos[i];
-                    const ext = photo.file.name.split('.').pop();
-                    const fileName = `photos/${Date.now()}_${i}.${ext}`;
-                    const storageRef = ref(storage, fileName);
-                    if (publishBtn) publishBtn.textContent = `Photo ${i+1}/${selectedPhotos.length}...`;
-                    const url = await new Promise((resolve, reject) => {
-                        const task = uploadBytesResumable(storageRef, photo.file);
-                        task.on('state_changed', null, reject, async () => {
-                            resolve(await getDownloadURL(task.snapshot.ref));
-                        });
-                    });
-                    photosData.push(url);
-                }
-                showToast('Photos uploadées ✅', 'success');
-            } catch(err) {
-                // Fallback to blob URLs (won't persist across sessions but visible now)
-                photosData = selectedPhotos.map(p => p.url);
-                console.warn('Photo upload error, using blob URLs:', err);
-            }
-        } else if (selectedPhotos.length > 0) {
-            // No Firebase - use blob URLs (local session only)
-            photosData = selectedPhotos.map(p => p.url);
+        if (selectedPhotos.length > 0) {
+            if (publishBtn) publishBtn.textContent = 'Traitement photos...';
+            photosData = await Promise.all(selectedPhotos.map(p => new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result); // base64 data URL
+                reader.readAsDataURL(p.file);
+            })));
         }
 
         const videoSrc = permanentVideoURL || null;
