@@ -4181,11 +4181,34 @@
             <div class="stg-section" id="stg-securite">
                 <div class="stg-section-title">Sécurité</div>
 
+                <div class="stg-group-title">Adresse email</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Email actuel</div>
+                        <div class="stg-row-sub" id="stgCurrentEmail">—</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <button class="stg-btn" onclick="toggleEmailChange()">Modifier</button>
+                    </div>
+                </div>
+                <!-- Email change inline form -->
+                <div id="stgEmailForm" style="display:none; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; flex-direction:column; gap:10px; max-width:380px;">
+                        <input class="stg-select" style="border-radius:10px;padding:10px 14px;min-width:unset;width:100%;" type="email" id="stgNewEmail" placeholder="Nouvel email">
+                        <input class="stg-select" style="border-radius:10px;padding:10px 14px;min-width:unset;width:100%;" type="password" id="stgEmailPassword" placeholder="Mot de passe actuel (confirmation)">
+                        <div style="display:flex;gap:8px;">
+                            <button class="stg-btn" style="flex:1;" onclick="toggleEmailChange()">Annuler</button>
+                            <button class="stg-btn" style="flex:1;background:var(--accent);border-color:transparent;color:#fff;font-weight:700;" onclick="saveEmailChange()">Confirmer</button>
+                        </div>
+                        <div style="font-size:.75rem;color:rgba(255,255,255,0.35);line-height:1.5;">Un email de vérification sera envoyé à ta nouvelle adresse avant que le changement soit effectif.</div>
+                    </div>
+                </div>
+
                 <div class="stg-group-title">Mot de passe</div>
                 <div class="stg-row">
                     <div class="stg-row-left">
                         <div class="stg-row-label">Changer le mot de passe</div>
-                        <div class="stg-row-sub">Un email de vérification te sera envoyé</div>
+                        <div class="stg-row-sub">Un email de réinitialisation sera envoyé à ton adresse actuelle</div>
                     </div>
                     <div class="stg-row-right">
                         <button class="stg-btn" onclick="sendPasswordReset()">Envoyer l'email</button>
@@ -4935,10 +4958,43 @@
             if (!auth || !sendPasswordResetEmail) { showToast("Fonction non disponible", 'error'); return; }
             await sendPasswordResetEmail(auth, email);
             showToast(`Email envoyé à ${email} 📧 Vérifie ta boîte mail !`, 'success');
-            closeSettings();
         } catch(e) {
             if (e.code === 'auth/user-not-found') showToast("Email introuvable", 'error');
             else showToast("Erreur : " + e.message, 'error');
+        }
+    }
+
+    function toggleEmailChange() {
+        const form = document.getElementById('stgEmailForm');
+        if (!form) return;
+        const visible = form.style.display !== 'none';
+        form.style.display = visible ? 'none' : 'block';
+        if (!visible) {
+            document.getElementById('stgNewEmail').value = '';
+            document.getElementById('stgEmailPassword').value = '';
+            document.getElementById('stgNewEmail').focus();
+        }
+    }
+
+    async function saveEmailChange() {
+        const newEmail = document.getElementById('stgNewEmail').value.trim();
+        const password = document.getElementById('stgEmailPassword').value;
+        if (!newEmail || !newEmail.includes('@')) { showToast('Email invalide', 'error'); return; }
+        if (!password) { showToast('Mot de passe requis pour confirmer', 'error'); return; }
+        try {
+            const auth = window._firebaseAuth;
+            const { signInWithEmailAndPassword } = window._firebaseFns;
+            if (!auth || !auth.currentUser) { showToast('Non connecté', 'error'); return; }
+            // Re-authenticate
+            await signInWithEmailAndPassword(auth, currentUser.email, password);
+            // Update email via Firebase
+            await auth.currentUser.verifyBeforeUpdateEmail(newEmail);
+            showToast(`Email de vérification envoyé à ${newEmail} 📧`, 'success');
+            toggleEmailChange();
+        } catch(e) {
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe incorrect ❌', 'error');
+            else if (e.code === 'auth/email-already-in-use') showToast('Cet email est déjà utilisé', 'error');
+            else showToast('Erreur : ' + e.message, 'error');
         }
     }
 
@@ -6414,13 +6470,18 @@
                      onclick="setAccentColor('${c.value}', this)"></div>
             `).join('');
         }
-        // Fill session info
+        // Fill session + security email info
         if (currentUser) {
             const n = document.getElementById('stgSessionName');
             const e = document.getElementById('stgSessionEmail');
             if (n) n.textContent = currentUser.displayName || currentUser.username || '—';
             if (e) e.textContent = currentUser.email || '—';
+            const ce = document.getElementById('stgCurrentEmail');
+            if (ce) ce.textContent = currentUser.email || '—';
         }
+        // Hide email form on open
+        const ef = document.getElementById('stgEmailForm');
+        if (ef) ef.style.display = 'none';
         // Default tab
         switchStgTab('compte', document.querySelector('.stg-nav-item'));
     }
