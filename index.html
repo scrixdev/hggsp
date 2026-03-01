@@ -1917,12 +1917,13 @@
         .stg-content {
             flex: 1; overflow-y: auto; padding: 32px 48px 48px;
             background: var(--bg); min-width: 0;
+            display: flex; flex-direction: column; align-items: flex-start;
         }
         .stg-content::-webkit-scrollbar { width: 3px; }
         .stg-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
         .stg-section { display: none; }
-        .stg-section.active { display: block; max-width: 700px; }
+        .stg-section.active { display: block; width: 100%; max-width: 700px; }
 
         .stg-section-title {
             font-size: 1.4rem; font-weight: 800;
@@ -4018,7 +4019,6 @@
                         </div>
                     </div>
                 </div>
-                </div>
             </div>
 
             <!-- ═══ CONFIDENTIALITÉ ═══ -->
@@ -4085,6 +4085,104 @@
                     </div>
                 </div>
 
+                <div class="stg-group-title">Suggestions</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Suggérer ton compte</div>
+                        <div class="stg-row-sub">Ton profil peut apparaître dans les suggestions de la page "Découvrir"</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgSuggestAccount" checked onchange="showToast(this.checked?'Suggestions activées':'Suggestions désactivées','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Synchroniser les contacts</div>
+                        <div class="stg-row-sub">Retrouve tes contacts inscrits sur HGGSP</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgSyncContacts" onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Partage & Intégration</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Partage de vidéos</div>
+                        <div class="stg-row-sub">Qui peut partager tes vidéos hors de la plateforme</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgSharePerm">
+                                <option value="all">Tout le monde</option>
+                                <option value="followers">Abonnés</option>
+                                <option value="none">Personne</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Duos & collaborations</div>
+                        <div class="stg-row-sub">Qui peut créer des duos avec tes vidéos</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgDuoPerm">
+                                <option value="all">Tout le monde</option>
+                                <option value="followers">Abonnés</option>
+                                <option value="none">Personne</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Téléchargement de tes vidéos</div>
+                        <div class="stg-row-sub">Autoriser les autres à télécharger tes vidéos</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgAllowDownload" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Activité</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Statut en ligne visible</div>
+                        <div class="stg-row-sub">Les abonnés peuvent voir si tu es en ligne</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgOnlineStatus" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Accusés de lecture</div>
+                        <div class="stg-row-sub">Indiquer quand tu as lu un message</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgReadReceipts" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="stg-group-title">Données</div>
                 <div class="stg-row">
                     <div class="stg-row-left">
@@ -4092,7 +4190,19 @@
                         <div class="stg-row-sub">Reçois une copie de tes données HGGSP</div>
                     </div>
                     <div class="stg-row-right">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        <button class="stg-btn" onclick="showToast('Demande envoyée par email 📧','success')">Demander</button>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Personnalisation des contenus</div>
+                        <div class="stg-row-sub">Utiliser ton activité pour personnaliser les vidéos suggérées</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgAdPersonalization" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -4162,6 +4272,87 @@
                         </label>
                     </div>
                 </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Vidéos tendance</div>
+                        <div class="stg-row-sub">Quand une de tes vidéos devient populaire</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgNotifTrend" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Réponses à tes commentaires</div>
+                        <div class="stg-row-sub">Quand quelqu'un répond à un de tes commentaires</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgNotifReply" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Notifications par email</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Récapitulatif hebdomadaire</div>
+                        <div class="stg-row-sub">Reçois un résumé de ton activité chaque semaine</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgEmailWeekly" onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Nouveautés & mises à jour</div>
+                        <div class="stg-row-sub">Sois informé(e) des nouvelles fonctionnalités HGGSP</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgEmailNews" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Son & Vibration</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Son des notifications</div>
+                        <div class="stg-row-sub">Jouer un son lors de la réception d'une notification</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgNotifSound" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Mode Ne pas déranger</div>
+                        <div class="stg-row-sub">Suspendre toutes les notifications pendant une durée définie</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgDndMode">
+                                <option value="off">Désactivé</option>
+                                <option value="1h">1 heure</option>
+                                <option value="8h">8 heures</option>
+                                <option value="always">Toujours</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- ═══ APPARENCE ═══ -->
@@ -4186,6 +4377,99 @@
                 <div class="stg-row" style="flex-direction:column; align-items:flex-start; gap:14px;">
                     <div class="stg-row-sub">Personnalise la couleur principale de l'interface</div>
                     <div class="stg-accent-grid" id="stgAccentGrid"></div>
+                </div>
+
+                <div class="stg-group-title">Langue</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Langue de l'interface</div>
+                        <div class="stg-row-sub">Choisir la langue d'affichage de HGGSP</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgLang" onchange="showToast('Langue mise à jour ✓','success')">
+                                <option value="fr">Français</option>
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="pt">Português</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Accessibilité</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Réduire les animations</div>
+                        <div class="stg-row-sub">Limiter les effets de mouvement pour l'accessibilité</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgReduceMotion" onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Taille des textes</div>
+                        <div class="stg-row-sub">Ajuster la taille de la police dans l'application</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgFontSize" onchange="showToast('Taille mise à jour','info')">
+                                <option value="small">Petite</option>
+                                <option value="normal" selected>Normale</option>
+                                <option value="large">Grande</option>
+                                <option value="xlarge">Très grande</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Sous-titres automatiques</div>
+                        <div class="stg-row-sub">Afficher des sous-titres générés sur les vidéos</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgSubtitles" onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Lecture automatique</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Lecture automatique des vidéos</div>
+                        <div class="stg-row-sub">Lancer les vidéos automatiquement en naviguant</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgAutoplay" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Qualité vidéo par défaut</div>
+                        <div class="stg-row-sub">Résolution utilisée lors du chargement des vidéos</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stgVideoQuality" onchange="showToast('Qualité mise à jour','info')">
+                                <option value="auto" selected>Automatique</option>
+                                <option value="hd">Haute qualité (HD)</option>
+                                <option value="sd">Standard (SD)</option>
+                                <option value="low">Économie de données</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -4261,6 +4545,69 @@
                         </div>
                     </div>
                 </div>
+                <div class="stg-group-title">Vérification en deux étapes</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Authentification à deux facteurs</div>
+                        <div class="stg-row-sub">Sécurise ton compte avec un code envoyé par SMS ou email à chaque connexion</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stg2FA" onchange="showToast(this.checked?'2FA activé 🔐':'2FA désactivé','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Méthode de vérification</div>
+                        <div class="stg-row-sub">Comment recevoir ton code de connexion</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <div class="stg-select-wrap">
+                            <select class="stg-select" id="stg2FAMethod">
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="app">Application d'authentification</option>
+                            </select>
+                            <span class="stg-select-arrow">▼</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Connexions récentes</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Cet appareil</div>
+                        <div class="stg-row-sub">Navigateur Web — Guadeloupe, FR · Actif maintenant</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <span style="font-size:.75rem;color:var(--accent2);font-weight:600;">Actuel</span>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Déconnecter tous les appareils</div>
+                        <div class="stg-row-sub">Met fin à toutes les sessions actives sauf celle-ci</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés 🔒','success')">Déconnecter</button>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Activité du compte</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Alertes de connexion suspecte</div>
+                        <div class="stg-row-sub">Reçois un email si une connexion inhabituelle est détectée</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <label class="stg-toggle">
+                            <input type="checkbox" id="stgLoginAlert" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <div class="stg-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- ═══ SESSION ═══ -->
@@ -4273,14 +4620,51 @@
                         <div class="stg-row-label" id="stgSessionName">—</div>
                         <div class="stg-row-sub" id="stgSessionEmail">—</div>
                     </div>
+                    <div class="stg-row-right">
+                        <span style="font-size:.75rem;background:rgba(37,244,238,0.12);color:var(--accent2);padding:4px 10px;border-radius:20px;font-weight:700;">En ligne</span>
+                    </div>
                 </div>
                 <div class="stg-row">
                     <div class="stg-row-left">
-                        <div class="stg-row-label">Se déconnecter</div>
+                        <div class="stg-row-label">Type de compte</div>
+                        <div class="stg-row-sub" id="stgSessionRole">Élève</div>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Membre depuis</div>
+                        <div class="stg-row-sub" id="stgSessionSince">—</div>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Appareils connectés</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Navigateur Web</div>
+                        <div class="stg-row-sub">Guadeloupe, FR · Actif maintenant</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <span style="font-size:.75rem;color:var(--accent2);font-weight:600;">Actuel</span>
+                    </div>
+                </div>
+
+                <div class="stg-group-title">Déconnexion</div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Se déconnecter de cet appareil</div>
                         <div class="stg-row-sub">Tu seras redirigé vers la page de connexion</div>
                     </div>
                     <div class="stg-row-right">
                         <button class="stg-row-action danger" onclick="closeSettings();handleLogout()">Déconnecter</button>
+                    </div>
+                </div>
+                <div class="stg-row">
+                    <div class="stg-row-left">
+                        <div class="stg-row-label">Déconnecter tous les appareils</div>
+                        <div class="stg-row-sub">Met fin à toutes les sessions actives partout</div>
+                    </div>
+                    <div class="stg-row-right">
+                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés 🔒','success')">Tout déconnecter</button>
                     </div>
                 </div>
             </div>
