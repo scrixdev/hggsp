@@ -1887,7 +1887,7 @@
         /* Body: sidebar + content */
         .stg-body {
             display: flex; flex: 1; overflow: hidden;
-            background: var(--bg);
+            background: var(--bg); width: 100%;
         }
 
         /* Left sidebar */
@@ -1916,13 +1916,13 @@
         /* Right content */
         .stg-content {
             flex: 1; overflow-y: auto; padding: 32px 48px 48px;
-            max-width: 820px;
+            background: var(--bg); min-width: 0;
         }
         .stg-content::-webkit-scrollbar { width: 3px; }
         .stg-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
         .stg-section { display: none; }
-        .stg-section.active { display: block; }
+        .stg-section.active { display: block; max-width: 700px; }
 
         .stg-section-title {
             font-size: 1.4rem; font-weight: 800;
@@ -3979,15 +3979,6 @@
                 </div>
                 <div class="stg-row">
                     <div class="stg-row-left">
-                        <div class="stg-row-label">Photo de profil</div>
-                        <div class="stg-row-sub">Changer ton avatar</div>
-                    </div>
-                    <div class="stg-row-right">
-                        <button class="stg-btn" onclick="openProfileEditModal()">Changer</button>
-                    </div>
-                </div>
-                <div class="stg-row">
-                    <div class="stg-row-left">
                         <div class="stg-row-label">Supprimer le compte</div>
                         <div class="stg-row-sub">Supprime définitivement ton compte et toutes tes données</div>
                     </div>
@@ -4000,12 +3991,33 @@
                 <div class="stg-row">
                     <div class="stg-row-left">
                         <div class="stg-row-label">Région du compte</div>
-                        <div class="stg-row-sub">Initialement définie selon ton lieu d'inscription</div>
+                        <div class="stg-row-sub" id="stgCurrentRegion">Guadeloupe</div>
                     </div>
                     <div class="stg-row-right">
-                        Guadeloupe
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        <button class="stg-btn" onclick="toggleRegionChange()">Modifier</button>
                     </div>
+                </div>
+                <!-- Region change inline form -->
+                <div id="stgRegionForm" style="display:none; padding: 28px 0 24px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Rechercher une région</label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;z-index:1;">🔍</span>
+                                <input type="text" id="stgRegionSearch" autocomplete="off" placeholder="Ex: Guadeloupe, Japon, Brésil…" oninput="filterRegions(this.value)" onfocus="showRegionDropdown()" onblur="setTimeout(()=>hideRegionDropdown(),200)" style="border-radius:14px;padding:16px 18px 16px 46px;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;color:#fff;font-family:inherit;outline:none;">
+                                <div id="stgRegionDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#1e1e1e;border:1.5px solid rgba(255,255,255,0.1);border-radius:14px;max-height:220px;overflow-y:auto;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,0.6);"></div>
+                            </div>
+                            <div id="stgRegionSelected" style="display:none;align-items:center;gap:10px;background:rgba(254,44,85,0.1);border:1px solid rgba(254,44,85,0.3);border-radius:12px;padding:12px 16px;">
+                                <span id="stgRegionSelectedText" style="font-size:.95rem;font-weight:600;color:#fff;flex:1;"></span>
+                                <button onclick="clearRegionSelection()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1.1rem;line-height:1;padding:0;" title="Changer">✕</button>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:4px;">
+                            <button class="stg-btn" style="flex:1;height:52px;font-size:.95rem;border-radius:14px;" onclick="toggleRegionChange()">Annuler</button>
+                            <button class="stg-btn" style="flex:2;height:52px;font-size:.95rem;font-weight:700;border-radius:14px;background:var(--accent);border-color:transparent;color:#fff;" onclick="saveRegionChange()">Confirmer</button>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
 
@@ -4192,15 +4204,24 @@
                     </div>
                 </div>
                 <!-- Email change inline form -->
-                <div id="stgEmailForm" style="display:none; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <div style="display:flex; flex-direction:column; gap:10px; max-width:380px;">
-                        <input class="stg-select" style="border-radius:10px;padding:10px 14px;min-width:unset;width:100%;" type="email" id="stgNewEmail" placeholder="Nouvel email">
-                        <input class="stg-select" style="border-radius:10px;padding:10px 14px;min-width:unset;width:100%;" type="password" id="stgEmailPassword" placeholder="Mot de passe actuel (confirmation)">
-                        <div style="display:flex;gap:8px;">
-                            <button class="stg-btn" style="flex:1;" onclick="toggleEmailChange()">Annuler</button>
-                            <button class="stg-btn" style="flex:1;background:var(--accent);border-color:transparent;color:#fff;font-weight:700;" onclick="saveEmailChange()">Confirmer</button>
+                <div id="stgEmailForm" style="display:none; padding: 28px 0 24px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Nouvelle adresse email</label>
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;" type="email" id="stgNewEmail" placeholder="nouvelle@adresse.fr" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
                         </div>
-                        <div style="font-size:.75rem;color:rgba(255,255,255,0.35);line-height:1.5;">Un email de vérification sera envoyé à ta nouvelle adresse avant que le changement soit effectif.</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Mot de passe actuel</label>
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;" type="password" id="stgEmailPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        </div>
+                        <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;">
+                            <span style="font-size:1rem;flex-shrink:0;margin-top:1px;">📧</span>
+                            <div style="font-size:.82rem;color:rgba(255,255,255,0.4);line-height:1.6;">Un email de vérification sera envoyé à ta nouvelle adresse avant que le changement soit effectif.</div>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:4px;">
+                            <button class="stg-btn" style="flex:1;height:52px;font-size:.95rem;border-radius:14px;" onclick="toggleEmailChange()">Annuler</button>
+                            <button class="stg-btn" style="flex:2;height:52px;font-size:.95rem;font-weight:700;border-radius:14px;background:var(--accent);border-color:transparent;color:#fff;" onclick="saveEmailChange()">Confirmer le changement</button>
+                        </div>
                     </div>
                 </div>
 
@@ -4208,10 +4229,36 @@
                 <div class="stg-row">
                     <div class="stg-row-left">
                         <div class="stg-row-label">Changer le mot de passe</div>
-                        <div class="stg-row-sub">Un email de réinitialisation sera envoyé à ton adresse actuelle</div>
+                        <div class="stg-row-sub">Modifie ton mot de passe de connexion</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-btn" onclick="sendPasswordReset()">Envoyer l'email</button>
+                        <button class="stg-btn" onclick="togglePasswordChange()">Modifier</button>
+                    </div>
+                </div>
+                <!-- Password change inline form -->
+                <div id="stgPasswordForm" style="display:none; padding: 28px 0 24px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Mot de passe actuel</label>
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;" type="password" id="stgCurrentPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Nouveau mot de passe</label>
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;" type="password" id="stgNewPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:.05em;text-transform:uppercase;">Confirmer le nouveau mot de passe</label>
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);transition:border-color .2s;" type="password" id="stgConfirmPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        </div>
+                        <div style="text-align:right;">
+                            <button onclick="sendPasswordReset()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:.82rem;font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;transition:color .2s;" onmouseover="this.style.color='rgba(254,44,85,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">
+                                Mot de passe oublié ? Recevoir un email de réinitialisation
+                            </button>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:4px;">
+                            <button class="stg-btn" style="flex:1;height:52px;font-size:.95rem;border-radius:14px;" onclick="togglePasswordChange()">Annuler</button>
+                            <button class="stg-btn" style="flex:2;height:52px;font-size:.95rem;font-weight:700;border-radius:14px;background:var(--accent);border-color:transparent;color:#fff;" onclick="savePasswordChange()">Confirmer le changement</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4961,6 +5008,220 @@
         } catch(e) {
             if (e.code === 'auth/user-not-found') showToast("Email introuvable", 'error');
             else showToast("Erreur : " + e.message, 'error');
+        }
+    }
+
+    // ── All regions data ──
+    const ALL_REGIONS = [
+        {flag:'🇫🇷',name:'France métropolitaine'},{flag:'🇬🇵',name:'Guadeloupe'},{flag:'🇲🇶',name:'Martinique'},
+        {flag:'🇬🇫',name:'Guyane'},{flag:'🇷🇪',name:'La Réunion'},{flag:'🇾🇹',name:'Mayotte'},
+        {flag:'🇳🇨',name:'Nouvelle-Calédonie'},{flag:'🇵🇫',name:'Polynésie française'},{flag:'🇵🇲',name:'Saint-Pierre-et-Miquelon'},
+        {flag:'🇼🇫',name:'Wallis-et-Futuna'},{flag:'🇧🇱',name:'Saint-Barthélemy'},{flag:'🇲🇫',name:'Saint-Martin'},
+        {flag:'🇦🇱',name:'Albanie'},{flag:'🇩🇪',name:'Allemagne'},{flag:'🇦🇩',name:'Andorre'},
+        {flag:'🇦🇲',name:'Arménie'},{flag:'🇦🇹',name:'Autriche'},{flag:'🇦🇿',name:'Azerbaïdjan'},
+        {flag:'🇧🇾',name:'Biélorussie'},{flag:'🇧🇪',name:'Belgique'},{flag:'🇧🇦',name:'Bosnie-Herzégovine'},
+        {flag:'🇧🇬',name:'Bulgarie'},{flag:'🇨🇾',name:'Chypre'},{flag:'🇭🇷',name:'Croatie'},
+        {flag:'🇩🇰',name:'Danemark'},{flag:'🇪🇸',name:'Espagne'},{flag:'🇪🇪',name:'Estonie'},
+        {flag:'🇫🇮',name:'Finlande'},{flag:'🇬🇪',name:'Géorgie'},{flag:'🇬🇷',name:'Grèce'},
+        {flag:'🇭🇺',name:'Hongrie'},{flag:'🇮🇪',name:'Irlande'},{flag:'🇮🇸',name:'Islande'},
+        {flag:'🇮🇹',name:'Italie'},{flag:'🇽🇰',name:'Kosovo'},{flag:'🇱🇻',name:'Lettonie'},
+        {flag:'🇱🇮',name:'Liechtenstein'},{flag:'🇱🇹',name:'Lituanie'},{flag:'🇱🇺',name:'Luxembourg'},
+        {flag:'🇲🇰',name:'Macédoine du Nord'},{flag:'🇲🇹',name:'Malte'},{flag:'🇲🇩',name:'Moldavie'},
+        {flag:'🇲🇨',name:'Monaco'},{flag:'🇲🇪',name:'Monténégro'},{flag:'🇳🇴',name:'Norvège'},
+        {flag:'🇳🇱',name:'Pays-Bas'},{flag:'🇵🇱',name:'Pologne'},{flag:'🇵🇹',name:'Portugal'},
+        {flag:'🇨🇿',name:'République tchèque'},{flag:'🇷🇴',name:'Roumanie'},{flag:'🇬🇧',name:'Royaume-Uni'},
+        {flag:'🇷🇺',name:'Russie'},{flag:'🇸🇲',name:'Saint-Marin'},{flag:'🇷🇸',name:'Serbie'},
+        {flag:'🇸🇰',name:'Slovaquie'},{flag:'🇸🇮',name:'Slovénie'},{flag:'🇸🇪',name:'Suède'},
+        {flag:'🇨🇭',name:'Suisse'},{flag:'🇺🇦',name:'Ukraine'},{flag:'🇻🇦',name:'Vatican'},
+        {flag:'🇦🇬',name:'Antigua-et-Barbuda'},{flag:'🇦🇷',name:'Argentine'},{flag:'🇧🇸',name:'Bahamas'},
+        {flag:'🇧🇧',name:'Barbade'},{flag:'🇧🇿',name:'Belize'},{flag:'🇧🇴',name:'Bolivie'},
+        {flag:'🇧🇷',name:'Brésil'},{flag:'🇨🇦',name:'Canada'},{flag:'🇨🇱',name:'Chili'},
+        {flag:'🇨🇴',name:'Colombie'},{flag:'🇨🇷',name:'Costa Rica'},{flag:'🇨🇺',name:'Cuba'},
+        {flag:'🇩🇲',name:'Dominique'},{flag:'🇪🇨',name:'Équateur'},{flag:'🇺🇸',name:'États-Unis'},
+        {flag:'🇬🇩',name:'Grenade'},{flag:'🇬🇹',name:'Guatemala'},{flag:'🇬🇾',name:'Guyana'},
+        {flag:'🇭🇹',name:'Haïti'},{flag:'🇭🇳',name:'Honduras'},{flag:'🇯🇲',name:'Jamaïque'},
+        {flag:'🇲🇽',name:'Mexique'},{flag:'🇳🇮',name:'Nicaragua'},{flag:'🇵🇦',name:'Panama'},
+        {flag:'🇵🇾',name:'Paraguay'},{flag:'🇵🇪',name:'Pérou'},{flag:'🇩🇴',name:'République dominicaine'},
+        {flag:'🇰🇳',name:'Saint-Kitts-et-Nevis'},{flag:'🇻🇨',name:'Saint-Vincent-et-les-Grenadines'},
+        {flag:'🇱🇨',name:'Sainte-Lucie'},{flag:'🇸🇻',name:'Salvador'},{flag:'🇸🇷',name:'Suriname'},
+        {flag:'🇹🇹',name:'Trinité-et-Tobago'},{flag:'🇺🇾',name:'Uruguay'},{flag:'🇻🇪',name:'Venezuela'},
+        {flag:'🇿🇦',name:'Afrique du Sud'},{flag:'🇩🇿',name:'Algérie'},{flag:'🇦🇴',name:'Angola'},
+        {flag:'🇧🇯',name:'Bénin'},{flag:'🇧🇼',name:'Botswana'},{flag:'🇧🇫',name:'Burkina Faso'},
+        {flag:'🇧🇮',name:'Burundi'},{flag:'🇨🇲',name:'Cameroun'},{flag:'🇨🇻',name:'Cap-Vert'},
+        {flag:'🇨🇫',name:'Centrafrique'},{flag:'🇰🇲',name:'Comores'},{flag:'🇨🇮',name:"Côte d'Ivoire"},
+        {flag:'🇩🇯',name:'Djibouti'},{flag:'🇪🇬',name:'Égypte'},{flag:'🇪🇷',name:'Érythrée'},
+        {flag:'🇸🇿',name:'Eswatini'},{flag:'🇪🇹',name:'Éthiopie'},{flag:'🇬🇦',name:'Gabon'},
+        {flag:'🇬🇲',name:'Gambie'},{flag:'🇬🇭',name:'Ghana'},{flag:'🇬🇳',name:'Guinée'},
+        {flag:'🇬🇼',name:'Guinée-Bissau'},{flag:'🇬🇶',name:'Guinée équatoriale'},{flag:'🇰🇪',name:'Kenya'},
+        {flag:'🇱🇸',name:'Lesotho'},{flag:'🇱🇷',name:'Liberia'},{flag:'🇱🇾',name:'Libye'},
+        {flag:'🇲🇬',name:'Madagascar'},{flag:'🇲🇼',name:'Malawi'},{flag:'🇲🇱',name:'Mali'},
+        {flag:'🇲🇦',name:'Maroc'},{flag:'🇲🇺',name:'Maurice'},{flag:'🇲🇷',name:'Mauritanie'},
+        {flag:'🇲🇿',name:'Mozambique'},{flag:'🇳🇦',name:'Namibie'},{flag:'🇳🇪',name:'Niger'},
+        {flag:'🇳🇬',name:'Nigeria'},{flag:'🇺🇬',name:'Ouganda'},{flag:'🇨🇩',name:'RD Congo'},
+        {flag:'🇨🇬',name:'République du Congo'},{flag:'🇷🇼',name:'Rwanda'},{flag:'🇸🇹',name:'São Tomé-et-Príncipe'},
+        {flag:'🇸🇳',name:'Sénégal'},{flag:'🇸🇨',name:'Seychelles'},{flag:'🇸🇱',name:'Sierra Leone'},
+        {flag:'🇸🇴',name:'Somalie'},{flag:'🇸🇩',name:'Soudan'},{flag:'🇸🇸',name:'Soudan du Sud'},
+        {flag:'🇹🇿',name:'Tanzanie'},{flag:'🇹🇩',name:'Tchad'},{flag:'🇹🇬',name:'Togo'},
+        {flag:'🇹🇳',name:'Tunisie'},{flag:'🇿🇲',name:'Zambie'},{flag:'🇿🇼',name:'Zimbabwe'},
+        {flag:'🇸🇦',name:'Arabie saoudite'},{flag:'🇧🇭',name:'Bahreïn'},{flag:'🇦🇪',name:'Émirats arabes unis'},
+        {flag:'🇮🇷',name:'Iran'},{flag:'🇮🇶',name:'Irak'},{flag:'🇮🇱',name:'Israël'},
+        {flag:'🇯🇴',name:'Jordanie'},{flag:'🇰🇼',name:'Koweït'},{flag:'🇱🇧',name:'Liban'},
+        {flag:'🇴🇲',name:'Oman'},{flag:'🇵🇸',name:'Palestine'},{flag:'🇶🇦',name:'Qatar'},
+        {flag:'🇸🇾',name:'Syrie'},{flag:'🇹🇷',name:'Turquie'},{flag:'🇾🇪',name:'Yémen'},
+        {flag:'🇦🇫',name:'Afghanistan'},{flag:'🇧🇩',name:'Bangladesh'},{flag:'🇧🇹',name:'Bhoutan'},
+        {flag:'🇮🇳',name:'Inde'},{flag:'🇰🇿',name:'Kazakhstan'},{flag:'🇰🇬',name:'Kirghizistan'},
+        {flag:'🇲🇻',name:'Maldives'},{flag:'🇳🇵',name:'Népal'},{flag:'🇺🇿',name:'Ouzbékistan'},
+        {flag:'🇵🇰',name:'Pakistan'},{flag:'🇱🇰',name:'Sri Lanka'},{flag:'🇹🇯',name:'Tadjikistan'},
+        {flag:'🇹🇲',name:'Turkménistan'},{flag:'🇲🇲',name:'Birmanie'},{flag:'🇧🇳',name:'Brunei'},
+        {flag:'🇰🇭',name:'Cambodge'},{flag:'🇨🇳',name:'Chine'},{flag:'🇰🇵',name:'Corée du Nord'},
+        {flag:'🇰🇷',name:'Corée du Sud'},{flag:'🇮🇩',name:'Indonésie'},{flag:'🇯🇵',name:'Japon'},
+        {flag:'🇱🇦',name:'Laos'},{flag:'🇲🇾',name:'Malaisie'},{flag:'🇲🇳',name:'Mongolie'},
+        {flag:'🇵🇭',name:'Philippines'},{flag:'🇸🇬',name:'Singapour'},{flag:'🇹🇼',name:'Taïwan'},
+        {flag:'🇹🇭',name:'Thaïlande'},{flag:'🇹🇱',name:'Timor oriental'},{flag:'🇻🇳',name:'Vietnam'},
+        {flag:'🇦🇺',name:'Australie'},{flag:'🇫🇯',name:'Fidji'},{flag:'🇲🇭',name:'Îles Marshall'},
+        {flag:'🇸🇧',name:'Îles Salomon'},{flag:'🇰🇮',name:'Kiribati'},{flag:'🇫🇲',name:'Micronésie'},
+        {flag:'🇳🇷',name:'Nauru'},{flag:'🇳🇿',name:'Nouvelle-Zélande'},{flag:'🇵🇼',name:'Palaos'},
+        {flag:'🇵🇬',name:'Papouasie-Nouvelle-Guinée'},{flag:'🇼🇸',name:'Samoa'},{flag:'🇹🇴',name:'Tonga'},
+        {flag:'🇹🇻',name:'Tuvalu'},{flag:'🇻🇺',name:'Vanuatu'}
+    ];
+
+    let _selectedRegion = null;
+
+    function filterRegions(query) {
+        const dd = document.getElementById('stgRegionDropdown');
+        if (!dd) return;
+        const q = query.trim().toLowerCase();
+        const results = q.length === 0
+            ? ALL_REGIONS.slice(0, 8)
+            : ALL_REGIONS.filter(r => r.name.toLowerCase().includes(q)).slice(0, 10);
+        if (results.length === 0) {
+            dd.innerHTML = '<div style="padding:14px 18px;color:rgba(255,255,255,0.35);font-size:.9rem;">Aucun résultat</div>';
+        } else {
+            dd.innerHTML = results.map((r, i) => {
+                const safeName = r.name.replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
+                return `<div data-region-idx="${i}" data-region-name="${safeName}" data-region-flag="${r.flag}"
+                    style="display:flex;align-items:center;gap:12px;padding:13px 18px;cursor:pointer;transition:background .15s;"
+                    onmousedown="selectRegionByEl(this)"
+                    onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+                    onmouseout="this.style.background='none'">
+                    <span style="font-size:1.3rem;">${r.flag}</span>
+                    <span style="font-size:.95rem;color:#fff;">${r.name}</span>
+                </div>`;
+            }).join('');
+        }
+        dd.style.display = 'block';
+    }
+
+    function selectRegionByEl(el) {
+        const name = el.getAttribute('data-region-name').replace(/&quot;/g,'"');
+        const flag = el.getAttribute('data-region-flag');
+        selectRegion(name, flag);
+    }
+
+    function showRegionDropdown() {
+        const search = document.getElementById('stgRegionSearch');
+        if (search) search.style.borderColor = 'rgba(254,44,85,0.6)';
+        filterRegions(search ? search.value : '');
+    }
+
+    function hideRegionDropdown() {
+        const dd = document.getElementById('stgRegionDropdown');
+        if (dd) dd.style.display = 'none';
+        const inp = document.getElementById('stgRegionSearch');
+        if (inp) inp.style.borderColor = 'rgba(255,255,255,0.1)';
+    }
+
+    function selectRegion(name, flag) {
+        _selectedRegion = name;
+        const search = document.getElementById('stgRegionSearch');
+        if (search) { search.value = ''; }
+        hideRegionDropdown();
+        const badge = document.getElementById('stgRegionSelected');
+        const badgeText = document.getElementById('stgRegionSelectedText');
+        if (badge && badgeText) {
+            badgeText.textContent = flag + '  ' + name;
+            badge.style.display = 'flex';
+        }
+    }
+
+    function clearRegionSelection() {
+        _selectedRegion = null;
+        const badge = document.getElementById('stgRegionSelected');
+        if (badge) badge.style.display = 'none';
+        const search = document.getElementById('stgRegionSearch');
+        if (search) { search.value = ''; search.focus(); }
+    }
+
+    function handleRegionSelectChange() {}
+
+    function toggleRegionChange() {
+        const form = document.getElementById('stgRegionForm');
+        if (!form) return;
+        const visible = form.style.display !== 'none';
+        form.style.display = visible ? 'none' : 'block';
+        if (!visible) {
+            _selectedRegion = null;
+            const search = document.getElementById('stgRegionSearch');
+            if (search) search.value = '';
+            const badge = document.getElementById('stgRegionSelected');
+            if (badge) badge.style.display = 'none';
+            hideRegionDropdown();
+            // Pre-fill current region as selected
+            const current = document.getElementById('stgCurrentRegion');
+            if (current && current.textContent && current.textContent !== '—') {
+                const currentVal = current.textContent.trim();
+                const match = ALL_REGIONS.find(r => r.name === currentVal);
+                if (match) selectRegion(match.name, match.flag);
+            }
+            setTimeout(() => { const s = document.getElementById('stgRegionSearch'); if(s) s.focus(); }, 100);
+        }
+    }
+
+    function saveRegionChange() {
+        if (!_selectedRegion) { showToast('Sélectionne une région d\'abord', 'error'); return; }
+        userProfile.region = _selectedRegion;
+        if (currentUser) currentUser.region = _selectedRegion;
+        const display = document.getElementById('stgCurrentRegion');
+        if (display) display.textContent = _selectedRegion;
+        saveSession();
+        showToast('Région mise à jour ✅', 'success');
+        toggleRegionChange();
+    }
+
+    function togglePasswordChange() {
+        const form = document.getElementById('stgPasswordForm');
+        if (!form) return;
+        const visible = form.style.display !== 'none';
+        form.style.display = visible ? 'none' : 'block';
+        if (!visible) {
+            document.getElementById('stgCurrentPassword').value = '';
+            document.getElementById('stgNewPassword').value = '';
+            document.getElementById('stgConfirmPassword').value = '';
+            document.getElementById('stgCurrentPassword').focus();
+        }
+    }
+
+    async function savePasswordChange() {
+        const currentPwd = document.getElementById('stgCurrentPassword').value;
+        const newPwd = document.getElementById('stgNewPassword').value;
+        const confirmPwd = document.getElementById('stgConfirmPassword').value;
+        if (!currentPwd) { showToast('Saisis ton mot de passe actuel', 'error'); return; }
+        if (!newPwd || newPwd.length < 6) { showToast('Le nouveau mot de passe doit faire au moins 6 caractères', 'error'); return; }
+        if (newPwd !== confirmPwd) { showToast('Les mots de passe ne correspondent pas ❌', 'error'); return; }
+        try {
+            const auth = window._firebaseAuth;
+            const { signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } = window._firebaseFns;
+            if (!auth || !auth.currentUser) { showToast('Non connecté', 'error'); return; }
+            // Re-authenticate first
+            await signInWithEmailAndPassword(auth, currentUser.email, currentPwd);
+            // Update password
+            await auth.currentUser.updatePassword(newPwd);
+            showToast('Mot de passe mis à jour avec succès ✅', 'success');
+            togglePasswordChange();
+        } catch(e) {
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe actuel incorrect ❌', 'error');
+            else if (e.code === 'auth/weak-password') showToast('Mot de passe trop faible', 'error');
+            else showToast('Erreur : ' + e.message, 'error');
         }
     }
 
@@ -6482,6 +6743,15 @@
         // Hide email form on open
         const ef = document.getElementById('stgEmailForm');
         if (ef) ef.style.display = 'none';
+        // Hide password form on open
+        const pf = document.getElementById('stgPasswordForm');
+        if (pf) pf.style.display = 'none';
+        // Hide region form on open + fill region
+        const rf = document.getElementById('stgRegionForm');
+        if (rf) rf.style.display = 'none';
+        const cr = document.getElementById('stgCurrentRegion');
+        if (cr && currentUser && currentUser.region) cr.textContent = currentUser.region;
+        else if (cr && userProfile && userProfile.region) cr.textContent = userProfile.region;
         // Default tab
         switchStgTab('compte', document.querySelector('.stg-nav-item'));
     }
