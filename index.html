@@ -5860,6 +5860,7 @@
                 bio: userProfile.bio || '',
                 canPublish: userProfile.canPublish || false,
                 role: userProfile.role,
+                region: userProfile.region || currentUser.region || '',
                 following: userProfile.following || [],
                 likedPosts: (userProfile.likedPosts || []).map(p => p.id || p),
                 repostedPosts: userProfile.repostedPosts || []
@@ -7725,7 +7726,7 @@
         saveSession();
         // Sync likes count to Firestore in real-time
         syncLikeToFirestore(post);
-        if (currentUser && currentUser.isGoogleUser) { saveUserToFirestore().catch(()=>{}); }
+        if (currentUser) { saveUserToFirestore().catch(()=>{}); }
         renderPosts();
     }
 
@@ -7838,7 +7839,7 @@
         document.getElementById('pmRepostIcon').setAttribute('stroke', !isReposted ? '#25f4ee' : 'currentColor');
         saveSession();
         autoSavePost(post);
-        if (currentUser && currentUser.isGoogleUser) { saveUserToFirestore().catch(()=>{}); }
+        if (currentUser) { saveUserToFirestore().catch(()=>{}); }
         renderPosts();
     }
 
@@ -8774,10 +8775,13 @@
     function saveBio() {
         const bio = document.getElementById('bioInput').value.trim();
         userProfile.bio = bio;
+        if (currentUser) currentUser.bio = bio;
         const bioEl = document.getElementById('profileBio');
         if (bioEl) bioEl.textContent = bio || 'Lycée Félix Ébouié — HGGSP';
         document.getElementById('spSubModal').style.display = 'none';
-        showToast('Bio mise à jour', 'success');
+        saveSession();
+        saveUserToFirestore().catch(() => {});
+        showToast('Bio mise à jour ✓', 'success');
     }
 
     // ── SEARCH ──
@@ -9223,13 +9227,13 @@
             btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Suivi`;
             showToast('Maintenant suivi', 'success');
         }
+        saveSession();
+        syncFollowToFirestore(authorId, !isFollowing);
         // Update own following count on profile tab
         const fc = document.getElementById('followingCountProfile');
         if (fc) fc.textContent = userProfile.following.length;
 
         // Update follower count displayed in the upo overlay for this user
-        // Count = how many current followers this user has (each follower who follows them)
-        // We track: if we follow them, their count goes +1/-1 relative to base
         const upoFollowersEls = document.querySelectorAll('.upo-followers-count[data-author="'+authorId+'"]');
         upoFollowersEls.forEach(el => {
             const base = parseInt(el.dataset.base || 0);
