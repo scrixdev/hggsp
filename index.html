@@ -2211,14 +2211,31 @@
 
         /* Accent color grid */
         .stg-accent-grid {
-            display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+            width: 100%;
+            margin-top: 8px;
         }
         .stg-accent-swatch {
-            width: 32px; height: 32px; border-radius: 50%;
-            cursor: pointer; border: 3px solid transparent;
-            transition: all .15s;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all .2s cubic-bezier(.34,1.56,.64,1);
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
         }
-        .stg-accent-swatch:hover, .stg-accent-swatch.active { border-color: var(--text); transform: scale(1.15); }
+        .stg-accent-swatch:hover { transform: scale(1.08); border-color: rgba(255,255,255,0.35); }
+        .stg-accent-swatch.active { border-color: #fff; }
+        .stg-accent-swatch.active::after {
+            content: '';
+            display: block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+        }
 
         /* Keep old sp- classes functional for existing JS */
         .sp-header, .sp-workspace, .sp-nav, .sp-footer { display: none !important; }
@@ -4665,9 +4682,10 @@
                 </div>
 
                 <div class="stg-group-title">Couleur d'accent</div>
-                <div class="stg-row" style="flex-direction:column; align-items:flex-start; gap:14px;">
-                    <div class="stg-row-sub">Personnalise la couleur principale de l'interface</div>
+                <div class="stg-row" style="flex-direction:column; align-items:flex-start; gap:16px; padding: 16px 0;">
+                    <div class="stg-row-sub" style="font-size:0.82rem;">Personnalise la couleur principale de l'interface</div>
                     <div class="stg-accent-grid" id="stgAccentGrid"></div>
+                    <div id="stgAccentLabel" style="font-size:0.78rem;color:var(--text3);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;"></div>
                 </div>
 
                 <div class="stg-group-title">Langue</div>
@@ -7424,7 +7442,8 @@
             grid.innerHTML = accentColors.map(c => `
                 <div class="stg-accent-swatch ${current === c.value ? 'active' : ''}"
                      style="background:${c.value}" title="${c.name}"
-                     onclick="setAccentColor('${c.value}', this)"></div>
+                     onclick="setAccentColor('${c.value}', this)">
+                </div>
             `).join('');
         }
         // Fill session + security email info
@@ -7488,7 +7507,7 @@
     }
 
     const accentColors = [
-        { name: 'Rouge TikTok', value: '#fe2c55' },
+        { name: 'Rouge', value: '#fe2c55' },
         { name: 'Cyan', value: '#25f4ee' },
         { name: 'Violet', value: '#a855f7' },
         { name: 'Bleu', value: '#3b82f6' },
@@ -7531,6 +7550,11 @@
         if (el) el.classList.add('active');
         const dot = document.getElementById('accentDot');
         if (dot) dot.style.background = color;
+        const labelEl = document.getElementById('stgAccentLabel');
+        if (labelEl) {
+            const found = accentColors.find(c => c.value === color);
+            labelEl.textContent = found ? found.name : '';
+        }
         showToast('Couleur mise à jour ✅', 'success');
     }
 
