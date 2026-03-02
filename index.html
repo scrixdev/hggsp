@@ -6511,11 +6511,12 @@
         }
     }
 
-    function handleLogout() {
-        // Sign out from Firebase if Google user
-        if (currentUser && currentUser.isGoogleUser && window._firebaseAuth) {
-            const { signOut } = window._firebaseFns;
-            signOut(window._firebaseAuth).catch(()=>{});
+    async function handleLogout() {
+        // Sauvegarde le profil dans Firestore avant de partir
+        try { await saveUserToFirestore(); } catch(e) {}
+        // Déconnecte Firebase pour TOUS les types de compte (Google + email)
+        if (window._firebaseAuth && window._firebaseFns) {
+            window._firebaseFns.signOut(window._firebaseAuth).catch(()=>{});
         }
         currentUser = null;
         window._googleLoginHandled = false;
@@ -10264,7 +10265,7 @@
                 <div class="action-modal-title">Se déconnecter ?</div>
                 <div class="action-modal-desc">Tu seras redirigé vers la page de connexion.<br>Tes données sont <strong>sauvegardées</strong>.</div>
                 <div class="action-modal-actions">
-                    <button class="action-modal-btn btn-danger" onclick="closeConfirmLogout();closeSettings();handleLogout()" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmLogout();closeSettings();handleLogout().catch(()=>{})" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
                         <span class="btn-inner">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                             Se déconnecter
@@ -10384,7 +10385,7 @@
                 <div class="action-modal-title">Tout déconnecter ?</div>
                 <div class="action-modal-desc">Toutes les sessions actives sur <strong>tous les appareils</strong> seront fermées, y compris celui-ci.</div>
                 <div class="action-modal-actions">
-                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDisconnectAll();closeSettings();handleLogout();showToast('Tous les appareils déconnectés','success')" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDisconnectAll();closeSettings();handleLogout().then(()=>showToast('Tous les appareils déconnectés','success')).catch(()=>{})" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
                         <span class="btn-inner">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                             Tout déconnecter
