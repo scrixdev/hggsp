@@ -9,7 +9,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -32,7 +32,7 @@
         window._firebaseDb = db;
         window._firebaseStorage = storage;
         window._firebaseProvider = provider;
-        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc };
+        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit };
         window._firebaseStorageFns = { ref, uploadBytesResumable, getDownloadURL };
 
         // Watch auth state — restore session on page reload for ALL Firebase users
@@ -4089,6 +4089,16 @@
                 </div>
             </button>
 
+            <button class="tt-nav-item" id="ttNavNotif" onclick="toggleNotifPanel()">
+                <div class="tt-nav-inner">
+                    <span class="tt-nav-icon" style="position:relative;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#fe2c55;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;"></span>
+                    </span>
+                    <span class="tt-nav-text">Notifications</span>
+                </div>
+            </button>
+
             <!-- Publier — inside nav, same style -->
             <button class="tt-post-btn" id="ttNavUpload" onclick="switchTab('upload', this)">
                 <div class="tt-post-btn-inner">
@@ -4620,6 +4630,19 @@
 </div>
 
 <!-- ========== REPORT/BLOCK MODAL ========== -->
+<!-- ===== NOTIFICATION PANEL ===== -->
+<div id="notifPanel" style="display:none;position:fixed;top:0;left:220px;width:340px;height:100vh;background:var(--surface);border-right:1px solid var(--border);z-index:1200;flex-direction:column;overflow:hidden;">
+    <div style="padding:20px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-weight:700;font-size:1.05rem;">Notifications</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="markAllNotifsRead()" style="font-size:0.75rem;color:var(--accent2);background:none;border:none;cursor:pointer;padding:4px 8px;">Tout marquer lu</button>
+            <button onclick="toggleNotifPanel()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+        </div>
+    </div>
+    <div id="notifList" style="flex:1;overflow-y:auto;padding:8px 0;"></div>
+</div>
+<div id="notifOverlay" onclick="toggleNotifPanel()" style="display:none;position:fixed;inset:0;z-index:1199;"></div>
+
 <div id="reportModal" class="report-modal" onclick="if(event.target===this)closeReportModal()">
     <div class="report-modal-box">
         <div class="report-modal-handle"></div>
@@ -6488,6 +6511,8 @@
         renderPosts();
         // Then start realtime Firestore listener (auto-sync forever)
         startRealtimePostsListener();
+        // Start notifications listener
+        startNotifListener();
     }
 
     // ── TAB ──
@@ -7600,7 +7625,7 @@
         if (!text || currentModalPostId === null) return;
         const post = posts.find(p => p.id === currentModalPostId);
         if (!post) return;
-        post.commentList.push({
+        const newComment = {
             author: userProfile.displayName || userProfile.username,
             text,
             time: formatTimestamp(new Date()),
@@ -7611,7 +7636,8 @@
             avatarImg: userProfile.avatarImg || null,
             likes: 0,
             isCreator: currentUser && String(post.authorId) === String(currentUser.id)
-        });
+        };
+        post.commentList.push(newComment);
         post.comments++;
         inp.value = '';
         inp.style.height = '18px';
@@ -7626,6 +7652,37 @@
         area.scrollTop = area.scrollHeight;
         // Update card
         renderPosts();
+        // Sync to Firestore
+        syncCommentToFirestore(post, newComment);
+    }
+
+    async function syncCommentToFirestore(post, comment) {
+        try {
+            const db = window._firebaseDb;
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { doc, updateDoc, increment, addDoc, collection, serverTimestamp } = fns;
+            // Save comment in post document
+            await updateDoc(doc(db, 'posts', String(post.id)), {
+                commentList: post.commentList,
+                comments: increment(1)
+            });
+            // Send notification to post author
+            const myId = String(currentUser?.id || '');
+            if (myId && String(post.authorId) !== myId) {
+                await addDoc(collection(db, 'notifications', String(post.authorId), 'items'), {
+                    type: 'comment',
+                    fromUserId: myId,
+                    fromUsername: userProfile.username || '',
+                    fromAvatarImg: userProfile.avatarImg || null,
+                    postId: String(post.id),
+                    postTitle: post.title || '',
+                    commentText: comment.text.substring(0, 80),
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
+        } catch(e) { console.warn('Comment sync error:', e); }
     }
 
     function modalToggleLike() {
@@ -7649,9 +7706,38 @@
             if (userProfile.likedPosts) userProfile.likedPosts = userProfile.likedPosts.filter(p => p.id !== currentModalPostId);
         }
         saveSession();
-        autoSavePost(post);
+        // Sync likes count to Firestore in real-time
+        syncLikeToFirestore(post);
         if (currentUser && currentUser.isGoogleUser) { saveUserToFirestore().catch(()=>{}); }
         renderPosts();
+    }
+
+    async function syncLikeToFirestore(post) {
+        try {
+            const db = window._firebaseDb;
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp } = fns;
+            const myId = String(currentUser?.id || '');
+            // Update like count on the post document
+            await updateDoc(doc(db, 'posts', String(post.id)), {
+                likes: increment(post.isLiked ? 1 : -1),
+                likedBy: post.isLiked ? arrayUnion(myId) : arrayRemove(myId)
+            });
+            // Send notification to post author (only on like, not unlike, and not to yourself)
+            if (post.isLiked && myId && String(post.authorId) !== myId) {
+                await addDoc(collection(db, 'notifications', String(post.authorId), 'items'), {
+                    type: 'like',
+                    fromUserId: myId,
+                    fromUsername: userProfile.username || '',
+                    fromAvatarImg: userProfile.avatarImg || null,
+                    postId: String(post.id),
+                    postTitle: post.title || '',
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
+        } catch(e) { console.warn('Like sync error:', e); }
     }
 
     function modalToggleSave() {
@@ -7687,7 +7773,32 @@
         const followingCount = document.querySelectorAll('.ps-stat');
         if (followingCount[1]) followingCount[1].querySelector('.ps-num').textContent = userProfile.following.length;
         saveSession();
-        if (currentUser && currentUser.isGoogleUser) saveUserToFirestore().catch(()=>{});
+        syncFollowToFirestore(post.authorId, !isFollowing);
+    }
+
+    async function syncFollowToFirestore(targetAuthorId, isNowFollowing) {
+        try {
+            const db = window._firebaseDb;
+            const fns = window._firebaseFns;
+            if (!db || !fns || !currentUser) return;
+            const { doc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, serverTimestamp } = fns;
+            const myId = String(currentUser.id || '');
+            // Save my following list
+            await updateDoc(doc(db, 'users', myId), {
+                following: isNowFollowing ? arrayUnion(String(targetAuthorId)) : arrayRemove(String(targetAuthorId))
+            });
+            // Send notification to target user
+            if (isNowFollowing && String(targetAuthorId) !== myId) {
+                await addDoc(collection(db, 'notifications', String(targetAuthorId), 'items'), {
+                    type: 'follow',
+                    fromUserId: myId,
+                    fromUsername: userProfile.username || '',
+                    fromAvatarImg: userProfile.avatarImg || null,
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
+        } catch(e) { console.warn('Follow sync error:', e); }
     }
 
     function modalToggleRepost() {
@@ -7961,22 +8072,58 @@
         if (publishBtn) { publishBtn.disabled = true; publishBtn.textContent = 'Publication...'; }
 
         let permanentVideoURL = null;
+        let photosData = [];
+        const userId = currentUser.id || currentUser.uid;
+        const storage = window._firebaseStorage;
+        const storageFns = window._firebaseStorageFns;
 
-        // Video: use blob URL directly (visible this session)
-        // Firebase Storage upload requires rules to be configured — skipped for now
-        if (selectedVideoFile && selectedVideoURL) {
-            permanentVideoURL = selectedVideoURL;
+        // Helper: upload a file to Firebase Storage and return its download URL
+        async function uploadFileToStorage(file, path) {
+            if (!storage || !storageFns) throw new Error('Storage non disponible');
+            const { ref, uploadBytesResumable, getDownloadURL } = storageFns;
+            const storageRef = ref(storage, path);
+            return new Promise((resolve, reject) => {
+                const task = uploadBytesResumable(storageRef, file);
+                task.on('state_changed',
+                    (snap) => {
+                        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+                        if (publishBtn) publishBtn.textContent = `Upload ${pct}%...`;
+                    },
+                    reject,
+                    async () => { resolve(await getDownloadURL(task.snapshot.ref)); }
+                );
+            });
         }
 
-        // Convert photos to base64 — works for everyone, no Firebase Storage needed
-        let photosData = [];
+        // Upload vidéo vers Firebase Storage
+        if (selectedVideoFile) {
+            try {
+                if (publishBtn) publishBtn.textContent = 'Upload vidéo...';
+                permanentVideoURL = await uploadFileToStorage(
+                    selectedVideoFile,
+                    `videos/${userId}/${Date.now()}_${selectedVideoFile.name}`
+                );
+            } catch(e) {
+                console.warn('Video upload failed:', e);
+                showToast('Erreur upload vidéo — vérifie les règles Firebase Storage', 'error');
+                if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
+                return;
+            }
+        }
+
+        // Upload photos vers Firebase Storage
         if (selectedPhotos.length > 0) {
-            if (publishBtn) publishBtn.textContent = 'Traitement photos...';
-            photosData = await Promise.all(selectedPhotos.map(p => new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result); // base64 data URL
-                reader.readAsDataURL(p.file);
-            })));
+            try {
+                if (publishBtn) publishBtn.textContent = 'Upload photos...';
+                photosData = await Promise.all(selectedPhotos.map((p, i) =>
+                    uploadFileToStorage(p.file, `photos/${userId}/${Date.now()}_${i}_${p.file.name}`)
+                ));
+            } catch(e) {
+                console.warn('Photo upload failed:', e);
+                showToast('Erreur upload photos — vérifie les règles Firebase Storage', 'error');
+                if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
+                return;
+            }
         }
 
         const videoSrc = permanentVideoURL || null;
@@ -9227,6 +9374,9 @@
         conversations[activeConvId].forEach(m => m.read = true);
         saveMsgToStorage();
 
+        // Start real-time listener for this conversation
+        listenToMessages(userId);
+
         // Mobile: show main panel
         document.getElementById('msgLayout')?.classList.add('conv-open');
         const layout = document.querySelector('.msg-layout');
@@ -9319,15 +9469,75 @@
         if (!text) return;
         input.value = '';
         if (!conversations[activeConvId]) conversations[activeConvId] = [];
-        conversations[activeConvId].push({ from: 'me', text, ts: Date.now(), read: true });
+        const msg = { from: 'me', text, ts: Date.now(), read: true };
+        conversations[activeConvId].push(msg);
         saveMsgToStorage();
         renderMessages(activeConvId);
         renderConvList();
+
+        // Save to Firestore for real-time delivery (not demo users)
+        if (!DEMO_USER_IDS.includes(String(activeConvId))) {
+            sendMessageToFirestore(activeConvId, text);
+        }
 
         // Demo reply after delay
         if (DEMO_USER_IDS.includes(String(activeConvId))) {
             setTimeout(() => simulateDemoReply(activeConvId, text), 1500 + Math.random() * 2000);
         }
+    }
+
+    async function sendMessageToFirestore(convId, text) {
+        try {
+            const db = window._firebaseDb;
+            const fns = window._firebaseFns;
+            if (!db || !fns || !currentUser) return;
+            const { collection, addDoc, serverTimestamp } = fns;
+            const myId = String(currentUser.id || '');
+            // convId is the other user's id — we build a canonical conversation id
+            const canonicalId = [myId, String(convId)].sort().join('_');
+            await addDoc(collection(db, 'messages', canonicalId, 'msgs'), {
+                from: myId,
+                text,
+                ts: Date.now(),
+                read: false,
+                createdAt: serverTimestamp()
+            });
+        } catch(e) { console.warn('Message send error:', e); }
+    }
+
+    let _msgUnsubscribe = null;
+
+    function listenToMessages(convId) {
+        // Unsubscribe from previous conversation
+        if (_msgUnsubscribe) { _msgUnsubscribe(); _msgUnsubscribe = null; }
+        if (!currentUser || DEMO_USER_IDS.includes(String(convId))) return;
+        try {
+            const db = window._firebaseDb;
+            const fns = window._firebaseFns;
+            if (!db || !fns) return;
+            const { collection, query, orderBy, onSnapshot } = fns;
+            const myId = String(currentUser.id || '');
+            const canonicalId = [myId, String(convId)].sort().join('_');
+            const q = query(collection(db, 'messages', canonicalId, 'msgs'), orderBy('ts', 'asc'));
+            _msgUnsubscribe = onSnapshot(q, (snap) => {
+                const msgs = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    msgs.push({
+                        from: data.from === myId ? 'me' : 'them',
+                        text: data.text,
+                        ts: data.ts,
+                        read: data.read
+                    });
+                });
+                conversations[String(convId)] = msgs;
+                saveMsgToStorage();
+                if (String(activeConvId) === String(convId)) {
+                    renderMessages(convId);
+                    renderConvList();
+                }
+            });
+        } catch(e) { console.warn('Message listen error:', e); }
     }
 
     const demoReplies = {
@@ -9942,6 +10152,141 @@
         </div>
     </div>
 </div>
+
+<script>
+// ══════════════════════════════════════════════
+// SYSTÈME DE NOTIFICATIONS TEMPS RÉEL
+// ══════════════════════════════════════════════
+
+let _notifUnsubscribe = null;
+let _notifItems = [];
+
+function startNotifListener() {
+    if (_notifUnsubscribe) { _notifUnsubscribe(); _notifUnsubscribe = null; }
+    if (!currentUser) return;
+    const db = window._firebaseDb;
+    const fns = window._firebaseFns;
+    if (!db || !fns) return;
+    try {
+        const { collection, query, orderBy, onSnapshot, limit } = fns;
+        const myId = String(currentUser.id || '');
+        const q = query(
+            collection(db, 'notifications', myId, 'items'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        _notifUnsubscribe = onSnapshot(q, (snap) => {
+            _notifItems = [];
+            snap.forEach(d => _notifItems.push({ id: d.id, ...d.data() }));
+            updateNotifBadge();
+            if (document.getElementById('notifPanel').style.display !== 'none') {
+                renderNotifPanel();
+            }
+        });
+    } catch(e) { console.warn('Notif listener error:', e); }
+}
+
+function updateNotifBadge() {
+    const unread = _notifItems.filter(n => !n.read).length;
+    const badge = document.getElementById('notifBadge');
+    if (!badge) return;
+    if (unread > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = unread > 9 ? '9+' : unread;
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notifPanel');
+    const overlay = document.getElementById('notifOverlay');
+    const isOpen = panel.style.display !== 'none';
+    if (isOpen) {
+        panel.style.display = 'none';
+        overlay.style.display = 'none';
+    } else {
+        panel.style.display = 'flex';
+        overlay.style.display = 'block';
+        renderNotifPanel();
+    }
+}
+
+function renderNotifPanel() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    if (_notifItems.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:var(--text3);font-size:0.9rem;">Aucune notification pour l'instant</div>`;
+        return;
+    }
+    list.innerHTML = _notifItems.map(n => {
+        const av = n.fromAvatarImg
+            ? `<img src="${n.fromAvatarImg}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">`
+            : `<div style="width:40px;height:40px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">👤</div>`;
+        let icon = '', msg = '';
+        if (n.type === 'like') {
+            icon = '❤️';
+            msg = `<b>${n.fromUsername || 'Quelqu\'un'}</b> a aimé ton post <i>${n.postTitle || ''}</i>`;
+        } else if (n.type === 'comment') {
+            icon = '💬';
+            msg = `<b>${n.fromUsername || 'Quelqu\'un'}</b> a commenté : "${n.commentText || ''}"`;
+        } else if (n.type === 'follow') {
+            icon = '➕';
+            msg = `<b>${n.fromUsername || 'Quelqu\'un'}</b> s'est abonné à toi`;
+        } else if (n.type === 'repost') {
+            icon = '🔁';
+            msg = `<b>${n.fromUsername || 'Quelqu\'un'}</b> a republié ton post`;
+        }
+        const ts = n.createdAt?.toDate ? formatTimestamp(n.createdAt.toDate()) : 'récemment';
+        return `<div onclick="markNotifRead('${n.id}')" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:${n.read ? 'transparent' : 'rgba(254,44,85,0.04)'};transition:background 0.2s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='${n.read ? 'transparent' : 'rgba(254,44,85,0.04)'}'">
+            <div style="position:relative;flex-shrink:0;">
+                ${av}
+                <span style="position:absolute;bottom:-2px;right:-2px;font-size:14px;">${icon}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.85rem;color:var(--text);line-height:1.4;">${msg}</div>
+                <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">${ts}</div>
+            </div>
+            ${!n.read ? '<div style="width:8px;height:8px;border-radius:50%;background:#fe2c55;flex-shrink:0;margin-top:6px;"></div>' : ''}
+        </div>`;
+    }).join('');
+}
+
+async function markNotifRead(notifId) {
+    try {
+        const db = window._firebaseDb;
+        const fns = window._firebaseFns;
+        if (!db || !fns || !currentUser) return;
+        const { doc, updateDoc } = fns;
+        const myId = String(currentUser.id || '');
+        await updateDoc(doc(db, 'notifications', myId, 'items', notifId), { read: true });
+        // Update local
+        const n = _notifItems.find(x => x.id === notifId);
+        if (n) n.read = true;
+        updateNotifBadge();
+        renderNotifPanel();
+    } catch(e) { console.warn('Mark read error:', e); }
+}
+
+async function markAllNotifsRead() {
+    try {
+        const db = window._firebaseDb;
+        const fns = window._firebaseFns;
+        if (!db || !fns || !currentUser) return;
+        const { doc, updateDoc } = fns;
+        const myId = String(currentUser.id || '');
+        await Promise.all(
+            _notifItems.filter(n => !n.read).map(n =>
+                updateDoc(doc(db, 'notifications', myId, 'items', n.id), { read: true })
+            )
+        );
+        _notifItems.forEach(n => n.read = true);
+        updateNotifBadge();
+        renderNotifPanel();
+        showToast('Toutes les notifications lues', 'success');
+    } catch(e) { console.warn('Mark all read error:', e); }
+}
+</script>
 
 </body>
 </html>
