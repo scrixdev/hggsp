@@ -282,10 +282,9 @@
             outline: none;
         }
 
-        input:focus, textarea:focus {
+        /* inputs with visible borders get accent on focus, transparent ones don't */
+        .form-control:focus, .stg-select:focus, .epm-input:focus, .epm-textarea:focus {
             border-color: var(--accent);
-            background: rgba(254,44,85,0.05);
-            box-shadow: 0 0 0 3px rgba(254,44,85,0.12);
         }
 
         input::placeholder, textarea::placeholder { color: var(--text3); }
@@ -385,7 +384,7 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .tt-nav { flex: 1; padding: 8px 10px; }
+        .tt-nav { padding: 8px 10px; }
         .tt-nav-item {
             width: 100%; background: transparent; border: none;
             color: var(--text2); padding: 0; border-radius: 10px;
@@ -458,14 +457,25 @@
 
         /* ===== POST BUTTON (TikTok + button) ===== */
         .tt-post-btn {
-            display: flex; align-items: center; gap: 10px;
-            background: none; border: 1.5px solid var(--border);
-            border-radius: 6px; padding: 9px 14px; margin: 6px 10px;
-            color: var(--text); cursor: pointer; width: calc(100% - 20px);
-            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.88rem; font-weight: 700;
-            transition: all 0.2s;
+            width: 100%; background: transparent; border: none;
+            color: var(--text2); padding: 0; border-radius: 10px;
+            cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex; align-items: center; margin: 2px 0;
+            text-align: left;
         }
-        .tt-post-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(254,44,85,0.05); }
+        .tt-post-btn-inner {
+            display: flex; align-items: center; gap: 12px;
+            width: 100%; padding: 11px 14px;
+            border-radius: 10px;
+            transition: all 0.15s;
+            color: var(--text2);
+        }
+        .tt-post-btn:hover .tt-post-btn-inner { background: var(--surface); color: var(--text); }
+        .tt-post-btn.tt-active .tt-post-btn-inner { background: rgba(254,44,85,0.1); color: var(--text); }
+        .tt-post-btn-label {
+            font-size: 0.95rem; font-weight: 600;
+            white-space: nowrap;
+        }
 
         /* ===== MOBILE TOP HEADER (shown on mobile only) ===== */
         .tt-mobile-header {
@@ -1558,40 +1568,198 @@
             margin-bottom: 2rem;
         }
 
+        /* ═══ PUBLISH PAGE — TikTok style ═══ */
         .publish-form {
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 860px; margin: 0 auto;
+            padding: 0 0 3rem;
+        }
+        .publish-form-header { margin-bottom: 24px; }
+        .publish-form-header h2 {
+            font-size: 1.3rem; font-weight: 800;
+            color: var(--text); letter-spacing: -.02em;
         }
 
-        .publish-form h2 {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-bottom: 2rem;
+        /* Two-column layout */
+        #uploadTab {
+            display: none;
+            min-height: 100vh;
+            padding: 0 !important;
+        }
+        #uploadTab.active {
+            display: flex; flex-direction: column;
+        }
+        #uploadTab .page-max {
+            flex: 1; display: flex; flex-direction: column;
+            padding: 2rem 2rem 1rem;
+            max-width: 100%; width: 100%; box-sizing: border-box;
+        }
+        #uploadTab .publish-form { flex: 1; display: flex; flex-direction: column; }
+        #uploadTab .publish-form-header { flex-shrink: 0; }
+        .publish-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 24px; align-items: stretch;
+            flex: 1; min-height: calc(100vh - 140px);
         }
 
-        .publish-form textarea { min-height: 120px; resize: vertical; }
-
-        .form-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 2rem;
+        /* Left — drop zone */
+        .publish-drop-col { display: flex; flex-direction: column; }
+        #photoUploadSection, #videoUploadSection { flex: 1; display: flex; flex-direction: column; }
+        #photoUploadSection .photo-upload-zone { flex: 1; }
+        .publish-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 0;
+            aspect-ratio: 9/14;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; cursor: pointer; position: relative;
+            overflow: hidden; transition: border-color .2s, background .2s;
+            text-align: center;
         }
-
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 1.5rem;
+        .publish-drop-zone:hover { border-color: var(--accent); background: rgba(254,44,85,0.03); }
+        .publish-drop-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .publish-drop-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--surface2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
             color: var(--text2);
-            font-size: 0.88rem;
+        }
+        .publish-drop-title { font-size: .9rem; font-weight: 700; color: var(--text); }
+        .publish-drop-hint { font-size: .72rem; color: var(--text2); line-height: 1.5; padding: 0 20px; }
+        .publish-drop-btn {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); padding: 8px 18px;
+            font-size: .82rem; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer; transition: background .15s; position: relative; z-index: 1;
+        }
+        .publish-drop-btn:hover { background: var(--border); }
+
+        /* Media type tabs (above drop zone) */
+        .media-type-tabs {
+            display: flex; gap: 6px; margin-bottom: 10px;
+        }
+        .media-type-tab {
+            flex: 1; padding: 8px 10px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text2); cursor: pointer;
+            font-size: .82rem; font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .media-type-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(254,44,85,0.07); }
+        .media-type-tab:hover:not(.active) { color: var(--text); background: var(--border); }
+
+        /* Photo preview grid */
+        .photo-upload-zone {
+            border: 2px dashed var(--border); border-radius: 16px;
+            min-height: 400px; height: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px;
+            cursor: pointer; position: relative; overflow: hidden;
+            transition: border-color .2s, background .2s; text-align: center;
+        }
+        .photo-upload-zone:hover { border-color: var(--accent); }
+        .photo-upload-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-icon-wrap {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--surface2); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; color: var(--text2);
+        }
+        .upload-label { font-size: .9rem; font-weight: 700; color: var(--text); }
+        .upload-hint { font-size: .72rem; color: var(--text2); padding: 0 16px; }
+        .upload-choose-btn {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); padding: 7px 16px;
+            font-size: .82rem; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer; position: relative; z-index: 1;
+        }
+        .photo-preview-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 5px; margin-top: 8px; border-radius: 12px; overflow: hidden;
+        }
+        .photo-preview-item { position: relative; aspect-ratio: 1; }
+        .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-preview-remove {
+            position: absolute; top: 4px; right: 4px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(0,0,0,0.7); color: #fff;
+            border: none; cursor: pointer; font-size: 10px;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--accent);
+        /* Right — fields */
+        .publish-fields-col {
+            display: flex; flex-direction: column;
+            height: 100%; min-height: 0;
+        }
+        .publish-field {
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+        }
+        .publish-field:first-child { padding-top: 0; }
+        .publish-field.grow {
+            flex: 1; display: flex; flex-direction: column;
+        }
+        .publish-field label {
+            display: block;
+            font-size: .68rem; font-weight: 700; color: var(--text2);
+            text-transform: uppercase; letter-spacing: .09em; margin-bottom: 8px;
+        }
+        .publish-field input[type="text"],
+        .publish-field textarea {
+            background: transparent; border: none; outline: none;
+            box-shadow: none;
+            color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: .92rem; width: 100%; padding: 0; resize: none; line-height: 1.6;
+        }
+        .publish-field input[type="text"]:focus,
+        .publish-field textarea:focus {
+            border: none; outline: none; box-shadow: none;
+            background: transparent;
+        }
+        .publish-field.grow textarea {
+            flex: 1; min-height: 140px;
+        }
+        .publish-field input::placeholder,
+        .publish-field textarea::placeholder { color: var(--text3); }
+
+        /* Hashtag preview */
+        .hashtag-preview { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+        .hashtag-pill {
+            font-size: .72rem; font-weight: 700; color: var(--accent);
+            background: rgba(254,44,85,0.1); border-radius: 20px; padding: 2px 9px;
+        }
+
+        /* Privacy toggle */
+        .checkbox-row {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text); font-size: .88rem; font-weight: 500;
+            cursor: pointer; user-select: none; padding: 14px 0 0;
+        }
+        .checkbox-row input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+        }
+
+        /* Publish button */
+        .publish-btn {
+            width: 100%; padding: 13px;
+            background: var(--accent); border: none; border-radius: 10px;
+            color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: .92rem; font-weight: 700;
+            cursor: pointer; transition: opacity .15s; margin-top: 16px;
+        }
+        .publish-btn:hover { opacity: .88; }
+        .publish-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+        
+        @media (max-width: 680px) {
+            .publish-layout { grid-template-columns: 1fr; }
+            .publish-drop-zone, .photo-upload-zone { aspect-ratio: 4/3; }
         }
 
         /* ========== MESSAGES ========== */
@@ -2939,112 +3107,130 @@
         /* ── EDIT PROFILE MODAL (TikTok style) ── */
         #editProfileModal {
             display: none; position: fixed; inset: 0; z-index: 99999;
-            background: rgba(0,0,0,0.65); backdrop-filter: blur(10px);
-            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);
+            align-items: center; justify-content: center; padding: 1rem;
         }
         #editProfileModal.open { display: flex; }
+
         .epm-box {
-            background: var(--surface);
+            background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            width: 90%; max-width: 520px;
+            border-radius: 16px;
+            width: 100%; max-width: 500px;
             max-height: 90vh; overflow-y: auto;
-            animation: confirmPop .22s cubic-bezier(.34,1.56,.64,1);
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            animation: confirmPop .2s cubic-bezier(.34,1.4,.64,1);
         }
         .epm-box::-webkit-scrollbar { display: none; }
+
         .epm-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 18px 20px 16px;
+            padding: 14px 20px;
             border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; background: var(--surface); z-index: 2;
+            position: sticky; top: 0; background: var(--bg); z-index: 2;
         }
-        .epm-header h2 { font-size: 1rem; font-weight: 800; color: var(--text); }
+        .epm-header h2 {
+            font-size: .95rem; font-weight: 700; color: var(--text);
+            letter-spacing: -.01em;
+        }
         .epm-header-actions { display: flex; gap: 8px; align-items: center; }
+
         .epm-cancel {
             background: var(--surface2); border: 1px solid var(--border);
-            border-radius: 10px; color: var(--text2); font-family: inherit;
+            border-radius: 10px; color: var(--text); font-family: inherit;
             font-size: .85rem; font-weight: 600;
             padding: 8px 16px; cursor: pointer; transition: background .15s;
         }
-        .epm-cancel:hover { background: var(--border); color: var(--text); }
+        .epm-cancel:hover { background: var(--border); }
+
         .epm-save {
             background: var(--accent); border: none; border-radius: 10px;
             color: #fff; font-family: inherit;
             font-size: .85rem; font-weight: 700;
-            padding: 8px 20px; cursor: pointer; transition: opacity .15s;
+            padding: 8px 18px; cursor: pointer; transition: opacity .15s;
         }
         .epm-save:disabled { opacity: .35; cursor: not-allowed; }
         .epm-save:not(:disabled):hover { opacity: .85; }
 
-        /* Avatar section */
         .epm-avatar-section {
             display: flex; flex-direction: column; align-items: center;
-            padding: 28px 24px 22px;
+            padding: 32px 24px 24px;
             border-bottom: 1px solid var(--border);
         }
         .epm-avatar-wrap {
-            position: relative; cursor: pointer; width: 88px; height: 88px;
+            position: relative; cursor: pointer;
+            width: 80px; height: 80px;
+            margin-bottom: 12px;
         }
         .epm-avatar-img {
-            width: 88px; height: 88px; border-radius: 50%;
+            width: 80px; height: 80px; border-radius: 50%;
             background: var(--gradient);
             display: flex; align-items: center; justify-content: center;
-            overflow: hidden; transition: opacity .15s;
+            overflow: hidden; transition: filter .18s;
         }
-        .epm-avatar-wrap:hover .epm-avatar-img { opacity: .72; }
+        .epm-avatar-wrap:hover .epm-avatar-img { filter: brightness(.6); }
+        .epm-avatar-overlay {
+            position: absolute; inset: 0; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; opacity: 0; transition: opacity .18s; pointer-events: none;
+        }
+        .epm-avatar-wrap:hover .epm-avatar-overlay { opacity: 1; }
         .epm-avatar-edit {
             position: absolute; bottom: 1px; right: 1px;
-            width: 26px; height: 26px; border-radius: 50%;
-            background: var(--surface2); border: 2px solid var(--surface);
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--surface2); border: 2px solid var(--bg);
             display: flex; align-items: center; justify-content: center;
-            pointer-events: none; color: var(--text); transition: background .15s;
+            pointer-events: none; color: var(--text); transition: background .15s, color .15s;
         }
-        .epm-avatar-wrap:hover .epm-avatar-edit { background: var(--accent); color: #fff; border-color: var(--surface); }
+        .epm-avatar-wrap:hover .epm-avatar-edit { background: var(--accent); color: #fff; }
         .epm-avatar-label {
-            font-size: .78rem; color: var(--text2);
-            margin-top: 10px; font-weight: 500;
+            font-size: .75rem; color: var(--text2); font-weight: 500;
         }
 
-        /* Field rows */
         .epm-field {
             display: flex; align-items: flex-start;
-            padding: 16px 20px;
+            padding: 16px 20px; gap: 20px;
             border-bottom: 1px solid var(--border);
-            gap: 18px;
         }
-        .epm-field:last-child { border-bottom: none; }
+        .epm-field:last-child { border-bottom: none; padding-bottom: 24px; }
         .epm-field-label {
-            flex-shrink: 0; width: 120px;
-            font-size: .85rem; font-weight: 700; color: var(--text);
-            padding-top: 10px;
+            flex-shrink: 0; width: 110px;
+            font-size: .85rem; font-weight: 600; color: var(--text);
+            padding-top: 11px; line-height: 1.2;
         }
         .epm-field-right { flex: 1; min-width: 0; }
+
         .epm-input {
-            width: 100%; background: var(--surface2);
+            width: 100%;
+            background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: 10px; color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: .9rem; padding: 10px 14px;
+            font-size: .88rem; padding: 10px 13px;
             outline: none; transition: border-color .15s;
         }
         .epm-input:focus { border-color: var(--accent); }
+        .epm-input::placeholder { color: var(--text3); }
         .epm-input-hint {
-            font-size: .72rem; color: var(--text2);
-            margin-top: 6px; line-height: 1.55;
+            font-size: .71rem; color: var(--text2);
+            margin-top: 7px; line-height: 1.55;
         }
+
         .epm-textarea {
-            width: 100%; background: var(--surface2);
+            width: 100%;
+            background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: 10px; color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: .9rem; padding: 10px 14px;
+            font-size: .88rem; padding: 10px 13px;
             outline: none; transition: border-color .15s;
-            resize: none; min-height: 88px; line-height: 1.55;
+            resize: none; min-height: 85px; line-height: 1.55;
         }
         .epm-textarea:focus { border-color: var(--accent); }
+        .epm-textarea::placeholder { color: var(--text3); }
         .epm-char-count {
-            font-size: .7rem; color: var(--text2);
-            text-align: right; margin-top: 4px;
+            font-size: .68rem; color: var(--text2);
+            text-align: right; margin-top: 5px;
         }
 
         /* ── REPORT REASON MODAL ── */
@@ -3148,7 +3334,8 @@
             .tt-sidebar-name { display: none; }
             .tt-sidebar-handle { display: none; }
             .tt-post-btn span { display: none; }
-            .tt-post-btn { justify-content: center; padding: 9px; margin: 6px auto; width: 46px; }
+            .tt-post-btn-label { display: none; }
+            .tt-post-btn-inner { justify-content: center; padding: 10px; }
             .tt-sidebar-user-row { justify-content: center; padding: 10px 6px; }
             .tt-nav-inner { padding: 11px 10px; justify-content: center; }
             .page-wrapper { margin-left: 72px; }
@@ -3325,6 +3512,17 @@
                     <span class="tt-nav-badge" id="ttMsgBadge" style="display:none">0</span>
                 </div>
             </button>
+
+            <!-- Publier — inside nav, same style -->
+            <button class="tt-post-btn" id="ttNavUpload" onclick="switchTab('upload', this)">
+                <div class="tt-post-btn-inner">
+                    <span class="tt-nav-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    </span>
+                    <span class="tt-post-btn-label">Publier</span>
+                </div>
+            </button>
+
             <button class="tt-nav-item" id="ttNavProfile" onclick="switchTab('profile', this)">
                 <div class="tt-nav-inner">
                     <span class="tt-nav-icon">
@@ -3366,12 +3564,6 @@
                 </div>
             </button>
         </nav>
-
-        <!-- Publish button -->
-        <button class="tt-post-btn" onclick="switchTab('upload', document.getElementById('ttNavUpload'))">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Publier</span>
-        </button>
 
         <!-- User info at bottom -->
         <div class="tt-sidebar-user">
@@ -3756,7 +3948,7 @@
                     <!-- Avatar -->
                     <div class="profile-pic-wrap" onclick="document.getElementById('avatarFileInput').click()">
                         <div class="profile-pic" id="profilePic">
-                            <span id="avatarEmoji" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                            <span id="avatarEmoji" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                             <img id="avatarImgReal" class="avatar-real" src="" alt="">
                             <div class="pic-hover-overlay">
                                 <span class="cam">
@@ -5781,7 +5973,7 @@
 
     function hggspSetActive(tabName) {
         // Update TikTok sidebar active state
-        document.querySelectorAll('.tt-nav-item').forEach(el => el.classList.remove('tt-active'));
+        document.querySelectorAll('.tt-nav-item, .tt-post-btn').forEach(el => el.classList.remove('tt-active'));
         const ttNavMap = {
             'home': 'ttNavHome', 'blog': 'ttNavBlog', 'search': 'ttNavSearch',
             'messages': 'ttNavMessages', 'profile': 'ttNavProfile',
@@ -5981,7 +6173,7 @@
             card.onclick = () => { trackInterest(post); openPostModal(post.id); };
             const avatarContent = post.avatarImg
                 ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-                : (post.avatar || '👤');
+                : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
             // Build thumbnail for card
             let thumbHTML = '';
             if (post.photos && post.photos.length > 0) {
@@ -6022,7 +6214,7 @@
     function renderPostCard(post) {
         const avatarContent = post.avatarImg
             ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-            : (post.avatar || '👤');
+            : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
         let thumbHTML = '';
         if (post.photos && post.photos.length > 0) {
             const countBadge = post.photos.length > 1 ? `<div class="card-photo-count">📷 ${post.photos.length}</div>` : '';
@@ -6103,7 +6295,7 @@
         // Fill modal
         const avatarContent = post.avatarImg
             ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-            : (post.avatar || '👤');
+            : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
         document.getElementById('pmAvatar').innerHTML = avatarContent;
         document.getElementById('pmAuthorName').textContent = post.author;
         // post.username may already contain '@' — ensure no double @@
@@ -6159,7 +6351,7 @@
         // User avatar in input
         const userAvContent = userProfile.avatarImg
             ? `<img src="${userProfile.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-            : (userProfile.avatar || '👤');
+            : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
         document.getElementById('pmUserAvatar').innerHTML = userAvContent;
 
         // Set follow button state
@@ -6256,7 +6448,7 @@
         const isCurrentUserCreator = currentUser && String(post.authorId) === String(currentUser.id);
         const creatorAv = userProfile.avatarImg
             ? `<img src="${userProfile.avatarImg}">`
-            : (userProfile.avatar || '👨‍🏫');
+            : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
 
         post.commentList.forEach((c, i) => {
             const div = document.createElement('div');
@@ -6265,7 +6457,7 @@
 
             const av = c.avatarImg
                 ? `<img src="${c.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-                : (c.avatar || '👤');
+                : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
 
             // Creator tag: "· Créateur(trice)" if commenter is post creator
             const isCommenterCreator = String(c.authorId) === String(post.authorId) || c.isCreator;
@@ -6285,7 +6477,7 @@
 
             // Creator heart on comment — TikTok style
             const creatorLiked = c.creatorLiked;
-            const creatorAvHtml = post.avatarImg ? `<img src="${post.avatarImg}">` : (post.avatar || '👤');
+            const creatorAvHtml = post.avatarImg ? `<img src="${post.avatarImg}">` : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
             // If current user is the creator, clicking the heart toggles creator-like
             // If creatorLiked → show heart+avatar; otherwise show normal like
             const likeOnRight = `
@@ -6310,7 +6502,7 @@
             const repliesHTML = (c.replies_list || []).map(r => {
                 const rav = r.avatarImg
                     ? `<img src="${r.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-                    : (r.avatar || '👤');
+                    : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
                 const rIsCreator = r.isCreator || (currentUser && String(r.authorId) === String(post.authorId));
                 const rCreatorTag = rIsCreator ? `<span class="pm-creator-tag">· Créateur(trice)</span>` : '';
                 const rRoleB = !rIsCreator && r.role === 'prof' ? '<span class="badge-prof" style="font-size:0.52rem;">PROF</span>' : '';
@@ -6727,44 +6919,45 @@
         c.innerHTML = `
             <div class="page-max">
                 <div class="publish-form">
-                    <h2>✍️ Nouveau post</h2>
-                    <div class="form-card">
-                        <div class="form-group">
-                            <label>Titre</label>
-                            <input type="text" id="postTitle" placeholder="Titre de ton post">
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Description</label>
-                            <textarea id="postDesc" placeholder="Décris ton contenu..."></textarea>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Hashtags</label>
-                            <input type="text" id="postHashtags" placeholder="#hggsp #geopolitique #histoire (séparés par des espaces)">
-                            <div id="hashtagPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:20px;"></div>
-                        </div>
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label>Média (optionnel)</label>
+                    <div class="publish-form-header">
+                        <h2>Nouveau post</h2>
+                    </div>
+                    <div class="publish-layout">
+                        <!-- Colonne gauche : zone de dépôt -->
+                        <div class="publish-drop-col">
                             <div class="media-type-tabs">
-                                <button class="media-type-tab active" onclick="switchMediaType('photo', this)" type="button">📷 Photos</button>
-                                <button class="media-type-tab" onclick="switchMediaType('video', this)" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> Vidéo</button>
+                                <button class="media-type-tab active" onclick="switchMediaType('photo', this)" type="button">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    Photos
+                                </button>
+                                <button class="media-type-tab" onclick="switchMediaType('video', this)" type="button">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                                    Vidéo
+                                </button>
                             </div>
-                            <!-- PHOTO UPLOAD -->
+                            <!-- PHOTO -->
                             <div id="photoUploadSection">
                                 <div class="photo-upload-zone" id="photoDropZone">
                                     <input type="file" id="photoFileInput" accept="image/*" multiple onchange="handlePhotoSelect(event)">
-                                    <div class="upload-icon">📷</div>
-                                    <div class="upload-label">Clique ou glisse tes photos ici</div>
-                                    <div class="upload-hint">JPG, PNG, WebP — jusqu'à 10 photos</div>
+                                    <div class="upload-icon-wrap">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    </div>
+                                    <div class="upload-label">Glisse tes photos ici</div>
+                                    <div class="upload-hint">JPG, PNG, WebP<br>jusqu'à 10 photos</div>
+                                    <span class="upload-choose-btn">Choisir un fichier</span>
                                 </div>
                                 <div id="photoPreviewGrid" class="photo-preview-grid" style="display:none;"></div>
                             </div>
-                            <!-- VIDEO UPLOAD -->
+                            <!-- VIDEO -->
                             <div id="videoUploadSection" style="display:none;">
-                                <div class="video-upload-zone" id="videoDropZone">
+                                <div class="photo-upload-zone" id="videoDropZone">
                                     <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoSelect(event)">
-                                    <div class="upload-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
-                                    <div class="upload-label">Clique ou glisse ta vidéo ici</div>
-                                    <div class="upload-hint">MP4, MOV, WebM — max 100 Mo</div>
+                                    <div class="upload-icon-wrap">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                                    </div>
+                                    <div class="upload-label">Glisse ta vidéo ici</div>
+                                    <div class="upload-hint">MP4, MOV, WebM<br>max 100 Mo</div>
+                                    <span class="upload-choose-btn">Choisir un fichier</span>
                                 </div>
                                 <div id="videoPreviewWrap" style="display:none;margin-top:1rem;" class="video-preview-wrap">
                                     <video id="videoPreview" controls></video>
@@ -6772,11 +6965,31 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="checkbox-row" style="margin-top:1rem;">
-                            <input type="checkbox" id="postPrivate">
-                            <label for="postPrivate">Post privé</label>
+
+                        <!-- Colonne droite : champs -->
+                        <div class="publish-fields-col">
+                            <div class="publish-field">
+                                <label>Titre</label>
+                                <input type="text" id="postTitle" placeholder="Donne un titre à ton post">
+                            </div>
+                            <div class="publish-field grow">
+                                <label>Description</label>
+                                <textarea id="postDesc" placeholder="Décris ton contenu..."></textarea>
+                            </div>
+                            <div class="publish-field">
+                                <label>Hashtags</label>
+                                <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-top:2px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                                    <input type="text" id="postHashtags" placeholder="hggsp geopolitique histoire" style="background:transparent;border:none;outline:none;box-shadow:none;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:.88rem;width:100%;padding:0;">
+                                </div>
+                                <div id="hashtagPreview" class="hashtag-preview"></div>
+                            </div>
+                            <label class="checkbox-row" for="postPrivate">
+                                <input type="checkbox" id="postPrivate">
+                                Post privé
+                            </label>
+                            <button class="publish-btn" onclick="publishPost()">Publier</button>
                         </div>
-                        <button class="btn btn-primary" onclick="publishPost()">Publier →</button>
                     </div>
                 </div>
             </div>
@@ -7250,7 +7463,7 @@
         const curBio = userProfile.bio || '';
         const avatarContent = userProfile.avatarImg
             ? `<img src="${userProfile.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-            : (userProfile.avatar || '👤');
+            : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
 
         // Populate fields
         document.getElementById('epmDisplayName').value = curDisplay;
@@ -7301,7 +7514,7 @@
         const currentBio = document.getElementById('profileBio') ? document.getElementById('profileBio').textContent : '';
         document.getElementById('spSubContent').innerHTML = `
             <div class="sp-sub-body">
-                <textarea id="bioInput" placeholder="Décris-toi en quelques mots...">${currentBio}</textarea>
+                <textarea id="bioInput" placeholder="Biographie">${currentBio}</textarea>
                 <button class="btn btn-primary" style="width:100%;" onclick="saveBio()">Sauvegarder</button>
             </div>
         `;
@@ -7383,7 +7596,7 @@
             }
             resultsEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;">` +
                 scored.map(({ post }) => {
-                    const av = post.avatarImg ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (post.avatar || '👤');
+                    const av = post.avatarImg ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
                     return `<div class="post-card" onclick="trackInterest(posts.find(p=>p.id==${post.id}));openPostModal(${post.id});">
                         <div class="post-card-thumb">
                             ${post.videoSrc ? `<video src="${post.videoSrc}" muted preload="metadata"></video>` : `<span style="font-size:4rem">${post.video || '📄'}</span>`}
@@ -7813,7 +8026,7 @@
             const sorted = [...posts].sort((a,b) => getAlgoScore(b) - getAlgoScore(a));
             discoveryEl.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;">` +
                 sorted.map(post => {
-                    const av = post.avatarImg ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : (post.avatar || '👤');
+                    const av = post.avatarImg ? `<img src="${post.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
                     return `<div class="post-card" onclick="trackInterest(posts.find(p=>p.id==${post.id}));openPostModal(${post.id});">
                         <div class="post-card-thumb">
                             ${post.videoSrc ? `<video src="${post.videoSrc}" muted preload="metadata"></video>` : `<span style="font-size:4rem">${post.video || '📄'}</span>`}
@@ -8088,7 +8301,7 @@
         const msgs = conversations[String(userId)] || [];
         const mutuals = getMutualFollows();
         const user = mutuals.find(m => String(m.id) === String(userId)) || demoUserInfo[userId] || { avatar: '👤', avatarImg: null };
-        const meAv = userProfile.avatarImg ? `<img src="${userProfile.avatarImg}">` : (userProfile.avatar || '👤');
+        const meAv = userProfile.avatarImg ? `<img src="${userProfile.avatarImg}">` : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
         const theirAv = user.avatarImg ? `<img src="${user.avatarImg}">` : (user.avatar || '👤');
 
         if (msgs.length === 0) {
@@ -8472,21 +8685,24 @@
         <!-- Avatar -->
         <div class="epm-avatar-section">
             <div class="epm-avatar-wrap" onclick="document.getElementById('avatarFileInput').click()">
-                <div class="epm-avatar-img" id="epmAvatarImg">
-                    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div class="epm-avatar-img" id="epmAvatarImg"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <!-- Overlay caméra centré -->
+                <div class="epm-avatar-overlay">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 </div>
+                <!-- Badge -->
                 <div class="epm-avatar-edit">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 </div>
             </div>
-            <div class="epm-avatar-label">Appuie pour changer la photo</div>
+            <div class="epm-avatar-label">Changer la photo de profil</div>
         </div>
 
         <!-- Nom d'utilisateur -->
         <div class="epm-field">
             <div class="epm-field-label">Nom d'utilisateur</div>
             <div class="epm-field-right">
-                <input class="epm-input" type="text" id="epmUsername" placeholder="monpseudo" oninput="sanitizeUsernameInput(this)">
+                <input class="epm-input" type="text" id="epmUsername" placeholder="Nom d'utilisateur" oninput="sanitizeUsernameInput(this)">
                 <div class="epm-input-hint">hggsp.felix-eboue.fr/@<span id="epmUsernamePreview">monpseudo</span><br>Les noms d'utilisateur ne peuvent contenir que des lettres, des chiffres, des traits de soulignement et des points.</div>
             </div>
         </div>
@@ -8495,7 +8711,7 @@
         <div class="epm-field">
             <div class="epm-field-label">Nom</div>
             <div class="epm-field-right">
-                <input class="epm-input" type="text" id="epmDisplayName" placeholder="Ton nom affiché (ex: SuquitoTT)">
+                <input class="epm-input" type="text" id="epmDisplayName" placeholder="Nom">
             </div>
         </div>
 
@@ -8503,7 +8719,7 @@
         <div class="epm-field">
             <div class="epm-field-label">Biographie</div>
             <div class="epm-field-right">
-                <textarea class="epm-textarea" id="epmBio" maxlength="80" placeholder="Décris-toi en quelques mots..." oninput="document.getElementById('epmBioCount').textContent=this.value.length+'/80'"></textarea>
+                <textarea class="epm-textarea" id="epmBio" maxlength="80" placeholder="Biographie" oninput="document.getElementById('epmBioCount').textContent=this.value.length+'/80'"></textarea>
                 <div class="epm-char-count" id="epmBioCount">0/80</div>
             </div>
         </div>
