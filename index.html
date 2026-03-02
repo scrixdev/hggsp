@@ -95,62 +95,260 @@
             justify-content: center;
         }
         #confirmDeleteModal.open { display: flex; }
-        .confirm-delete-box {
-            background: var(--surface);
-            border: 1px solid rgba(254,44,85,0.25);
-            border-radius: 20px;
-            padding: 2rem 1.75rem 1.5rem;
-            max-width: 360px;
-            width: 90%;
+
+        /* ========== UNIVERSAL ACTION MODAL ========== */
+        /* ═══════════════════════════════════
+           ACTION MODALS — Premium redesign
+        ═══════════════════════════════════ */
+        .action-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+        .action-modal-overlay.open { display: flex; }
+
+        .action-modal-box {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            background: linear-gradient(160deg, #1c1c1e 0%, #141416 100%);
+            border-radius: 28px;
+            padding: 2rem 1.6rem 1.6rem;
             text-align: center;
-            animation: confirmPop .2s cubic-bezier(.34,1.56,.64,1);
+            overflow: hidden;
+            animation: modalSpring .32s cubic-bezier(.34,1.42,.64,1) both;
+            /* subtle glass edge */
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.06) inset,
+                0 32px 64px rgba(0,0,0,0.6),
+                0 8px 24px rgba(0,0,0,0.4);
         }
-        @keyframes confirmPop {
-            from { transform: scale(.85); opacity: 0; }
-            to   { transform: scale(1);  opacity: 1; }
+        @keyframes modalSpring {
+            from { transform: scale(.82) translateY(24px); opacity: 0; filter: blur(4px); }
+            to   { transform: scale(1)   translateY(0);    opacity: 1; filter: blur(0);   }
         }
-        .confirm-delete-icon {
-            font-size: 2.5rem;
-            margin-bottom: .75rem;
+
+        /* ambient glow — changes per modal via class */
+        .action-modal-box.glow-danger::after {
+            content: '';
+            position: absolute;
+            top: -60px; left: 50%;
+            transform: translateX(-50%);
+            width: 220px; height: 120px;
+            background: radial-gradient(ellipse, rgba(254,44,85,0.18) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
         }
-        .confirm-delete-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: .4rem;
+        .action-modal-box.glow-neutral::after {
+            content: '';
+            position: absolute;
+            top: -60px; left: 50%;
+            transform: translateX(-50%);
+            width: 220px; height: 120px;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
         }
-        .confirm-delete-desc {
-            font-size: .85rem;
-            color: var(--text2);
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
+        /* top shimmer line */
+        .action-modal-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 15%; right: 15%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            pointer-events: none;
+            z-index: 1;
         }
-        .confirm-delete-actions {
+
+        .action-modal-inner { position: relative; z-index: 2; }
+
+        /* icon badge */
+        .modal-icon-badge {
+            width: 60px; height: 60px;
+            border-radius: 20px;
             display: flex;
-            gap: .75rem;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.4rem;
+            animation: badgePop .45s cubic-bezier(.34,1.56,.64,1) .06s both;
         }
-        .confirm-delete-actions button {
-            flex: 1;
-            padding: .7rem 1rem;
-            border-radius: 12px;
+        @keyframes badgePop {
+            from { transform: scale(.5) rotate(-12deg); opacity: 0; }
+            50%  { transform: scale(1.08) rotate(2deg); }
+            to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .modal-icon-badge.danger {
+            background: rgba(254,44,85,0.14);
+            box-shadow: 0 0 0 1px rgba(254,44,85,0.2) inset, 0 4px 16px rgba(254,44,85,0.15);
+        }
+        .modal-icon-badge.neutral {
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset;
+        }
+
+        /* typography */
+        .action-modal-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: .5rem;
+            letter-spacing: -.025em;
+            line-height: 1.2;
+        }
+        .action-modal-desc {
+            font-size: .83rem;
+            color: rgba(255,255,255,0.42);
+            line-height: 1.65;
+            margin-bottom: 1.6rem;
+        }
+        .action-modal-desc strong {
+            color: rgba(255,255,255,0.72);
+            font-weight: 600;
+        }
+
+        /* actions stack */
+        .action-modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+        .action-modal-separator {
+            height: 1px;
+            background: rgba(255,255,255,0.05);
+            margin: .1rem 0;
+        }
+
+        /* ── Base button ── */
+        .action-modal-btn {
+            position: relative;
+            width: 100%;
+            padding: .9rem 1rem;
+            border-radius: 16px;
             border: none;
             font-family: inherit;
             font-size: .9rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: opacity .15s, transform .15s;
+            letter-spacing: -.015em;
+            overflow: hidden;
+            isolation: isolate;
+            transition:
+                transform .2s cubic-bezier(.34,1.56,.64,1),
+                box-shadow .22s ease,
+                background .18s ease,
+                opacity .15s ease;
         }
-        .confirm-delete-actions button:active { transform: scale(.96); }
-        .confirm-btn-cancel {
-            background: var(--surface2);
-            color: var(--text);
+        /* mouse-position ripple */
+        .action-modal-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at var(--rx,50%) var(--ry,50%),
+                rgba(255,255,255,0.18) 0%,
+                transparent 60%
+            );
+            opacity: 0;
+            transition: opacity .35s ease;
+            pointer-events: none;
         }
-        .confirm-btn-cancel:hover { opacity: .8; }
-        .confirm-btn-delete {
-            background: var(--gradient);
+        .action-modal-btn:hover::after { opacity: 1; }
+        /* shine sweep */
+        .action-modal-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -80%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
+            transform: skewX(-18deg);
+            transition: left .5s ease;
+            pointer-events: none;
+        }
+        .action-modal-btn:hover::before { left: 160%; }
+        .action-modal-btn:active {
+            transform: scale(.955) !important;
+            transition: transform .07s ease !important;
+        }
+
+        /* btn-inner flex row */
+        .btn-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            pointer-events: none;
+        }
+
+        /* ── Danger ── */
+        .action-modal-btn.btn-danger {
+            background: linear-gradient(145deg, #ff3b62 0%, #be1a38 100%);
             color: #fff;
+            box-shadow: 0 4px 18px rgba(254,44,85,0.38), 0 1px 3px rgba(0,0,0,0.35);
         }
-        .confirm-btn-delete:hover { opacity: .85; }
+        .action-modal-btn.btn-danger:hover {
+            transform: translateY(-2px) scale(1.012);
+            box-shadow: 0 10px 30px rgba(254,44,85,0.52), 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* ── Neutral ── */
+        .action-modal-btn.btn-neutral {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.11);
+            color: rgba(255,255,255,0.82);
+        }
+        .action-modal-btn.btn-neutral:hover {
+            transform: translateY(-2px) scale(1.012);
+            background: rgba(255,255,255,0.11);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+        }
+
+        /* ── Cancel ── */
+        .action-modal-btn.btn-cancel {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.38);
+            font-weight: 600;
+        }
+        .action-modal-btn.btn-cancel:hover {
+            transform: translateY(-1px);
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.6);
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        /* ── Teal ── */
+        .action-modal-btn.btn-teal {
+            background: rgba(37,244,238,0.08);
+            border: 1px solid rgba(37,244,238,0.2);
+            color: #25f4ee;
+            font-weight: 700;
+        }
+        .action-modal-btn.btn-teal:hover {
+            transform: translateY(-2px) scale(1.012);
+            background: rgba(37,244,238,0.13);
+            box-shadow: 0 6px 22px rgba(37,244,238,0.18);
+        }
+
+        /* staggered entry */
+        .modal-animate-in > * {
+            opacity: 0;
+            transform: translateY(12px);
+            animation: modalItemIn .38s cubic-bezier(.16,1,.3,1) forwards;
+        }
+        .modal-animate-in > *:nth-child(1) { animation-delay: .09s; }
+        .modal-animate-in > *:nth-child(2) { animation-delay: .15s; }
+        .modal-animate-in > *:nth-child(3) { animation-delay: .22s; }
+        @keyframes modalItemIn {
+            to { opacity: 1; transform: none; }
+        }
 
         /* ========== AUTH ========== */
         .auth-screen {
@@ -718,7 +916,7 @@
             padding: 10px 12px;
             flex-shrink: 0;
         }
-        .hggsp-sb-logout {
+        /* logout btn removed — now in settings only */
             width: 100%; background: transparent; border: none;
             color: rgba(255,255,255,0.45);
             padding: 0; border-radius: 10px;
@@ -2967,37 +3165,56 @@
         .profile-post-tile:hover .tile-dots-btn { opacity: 1; }
         .tile-privacy-badge {
             position: absolute;
-            bottom: 28px; left: 7px;
-            background: rgba(0,0,0,0.75);
-            border-radius: 6px; padding: 2px 7px;
-            font-size: 0.68rem; font-weight: 700;
-            color: #fff; z-index: 5;
-            backdrop-filter: blur(4px);
+            top: 7px; left: 7px;
+            background: rgba(0,0,0,0.65);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 3px 7px 3px 5px;
+            font-size: 0.65rem; font-weight: 700;
+            color: rgba(255,255,255,0.85);
+            z-index: 5;
+            backdrop-filter: blur(8px);
+            display: flex; align-items: center; gap: 4px;
+            letter-spacing: .01em;
         }
         .tile-dots-menu {
-            position: absolute;
-            top: 40px; right: 7px;
-            background: #1f1f1f;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 14px;
+            position: fixed;
+            background: linear-gradient(160deg, #1e1e20 0%, #161618 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             overflow: hidden;
-            z-index: 100;
-            min-width: 175px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-            animation: menuPop 0.15s cubic-bezier(.16,1,.3,1);
+            z-index: 99999;
+            min-width: 190px;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.04) inset,
+                0 16px 40px rgba(0,0,0,0.7),
+                0 4px 12px rgba(0,0,0,0.4);
+            animation: menuPop 0.18s cubic-bezier(.34,1.4,.64,1);
         }
         @keyframes menuPop { from { opacity:0; transform: scale(0.9) translateY(-6px); } to { opacity:1; transform: scale(1) translateY(0); } }
         .tile-dots-menu-item {
             display: flex; align-items: center; gap: 10px;
-            padding: 12px 16px;
-            font-size: 0.88rem; font-weight: 600;
-            cursor: pointer; transition: background 0.15s;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 10px 12px;
+            font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.82);
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            border-top: 1px solid rgba(255,255,255,0.04);
         }
-        .tile-dots-menu-item:last-child { border-bottom: none; }
-        .tile-dots-menu-item:hover { background: rgba(255,255,255,0.07); }
-        .tile-dots-menu-item.danger { color: #fe4060; }
-        .tile-dots-menu-item .mi-icon { font-size: 1rem; width: 20px; text-align:center; }
+        .tile-dots-menu-item:first-child { border-top: none; }
+        .tile-dots-menu-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .tile-dots-menu-item.danger { color: rgba(254,64,96,0.85); }
+        .tile-dots-menu-item.danger:hover { background: rgba(254,44,85,0.08); color: #fe4060; }
+        .tile-dots-menu-item .mi-icon {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; color: rgba(255,255,255,0.55);
+            transition: background .12s, color .12s;
+        }
+        .tile-dots-menu-item:hover .mi-icon { background: rgba(255,255,255,0.1); color: #fff; }
+        .tile-dots-menu-item.danger .mi-icon { background: rgba(254,44,85,0.1); color: #fe4060; }
+        .tile-dots-menu-item.danger:hover .mi-icon { background: rgba(254,44,85,0.16); }
 
         /* ── VIDEO MODAL OWNER MENU ── */
         .pm-owner-wrap {
@@ -3021,153 +3238,264 @@
         .pm-owner-dropdown {
             display: none;
             position: absolute;
-            top: calc(100% + 8px); right: 0;
-            background: #242424;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 14px;
-            min-width: 220px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+            top: calc(100% + 6px); right: 0;
+            background: linear-gradient(160deg, #1e1e20 0%, #161618 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            min-width: 210px;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.04) inset,
+                0 16px 40px rgba(0,0,0,0.7),
+                0 4px 12px rgba(0,0,0,0.4);
             z-index: 99999;
             overflow: hidden;
-            animation: menuPop .15s cubic-bezier(.16,1,.3,1);
+            animation: menuPop .18s cubic-bezier(.34,1.4,.64,1);
+        }
+        @keyframes menuPop {
+            from { transform: scale(.9) translateY(-6px); opacity: 0; }
+            to   { transform: scale(1) translateY(0);     opacity: 1; }
         }
         .pm-owner-dropdown.open { display: block; }
         .pm-dd-section-title {
-            font-size: .72rem; font-weight: 700;
-            color: rgba(255,255,255,0.35);
-            text-transform: uppercase; letter-spacing: .08em;
-            padding: 10px 16px 4px;
+            font-size: .68rem; font-weight: 700;
+            color: rgba(255,255,255,0.28);
+            text-transform: uppercase; letter-spacing: .1em;
+            padding: 10px 14px 5px;
         }
         .pm-dd-item {
             display: flex; align-items: center; gap: 10px;
-            padding: 11px 16px;
-            font-size: .88rem; font-weight: 600;
-            cursor: pointer; transition: background .12s;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 10px 14px;
+            font-size: .85rem; font-weight: 600; color: rgba(255,255,255,0.82);
+            cursor: pointer;
+            transition: background .12s, color .12s;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            position: relative;
         }
         .pm-dd-item:first-of-type { border-top: none; }
-        .pm-dd-item:hover { background: rgba(255,255,255,0.06); }
-        .pm-dd-item .pd-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
-        .pm-dd-item .pd-check { margin-left: auto; color: var(--accent2); font-size: .85rem; font-weight: 800; }
-        .pm-dd-sep { height: 1px; background: rgba(255,255,255,0.07); margin: 4px 0; }
-        .pm-dd-item.pd-danger { color: #fe4060; }
+        .pm-dd-item:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+        /* icon container */
+        .pm-dd-item .pd-icon {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: rgba(255,255,255,0.6);
+            transition: background .12s, color .12s;
+        }
+        .pm-dd-item:hover .pd-icon {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .pm-dd-item .pd-check {
+            margin-left: auto;
+            color: #25f4ee;
+            display: flex; align-items: center;
+        }
+        .pm-dd-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 3px 0; }
+        .pm-dd-item.pd-danger { color: rgba(254,64,96,0.85); }
+        .pm-dd-item.pd-danger:hover { background: rgba(254,44,85,0.08); color: #fe4060; }
+        .pm-dd-item.pd-danger .pd-icon {
+            background: rgba(254,44,85,0.1);
+            color: #fe4060;
+        }
+        .pm-dd-item.pd-danger:hover .pd-icon {
+            background: rgba(254,44,85,0.16);
+        }
 
         /* ── PRIVACY SETTINGS MODAL ── */
+        /* ═══════════════════════════════════
+           PRIVACY MODAL — Premium redesign
+        ═══════════════════════════════════ */
         #privacyModal {
             display: none;
             position: fixed; inset: 0; z-index: 100000;
             background: rgba(0,0,0,0.72);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
             align-items: center; justify-content: center;
+            padding: 1.25rem;
         }
         #privacyModal.open { display: flex; }
+
         .priv-box {
-            background: #1a1a1a;
-            border-radius: 20px;
-            width: 90%; max-width: 400px;
+            position: relative;
+            width: 100%; max-width: 340px;
+            background: linear-gradient(160deg, #1c1c1e 0%, #141416 100%);
+            border-radius: 28px;
             overflow: hidden;
-            animation: confirmPop .2s cubic-bezier(.34,1.56,.64,1);
+            animation: modalSpring .32s cubic-bezier(.34,1.42,.64,1) both;
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.06) inset,
+                0 32px 64px rgba(0,0,0,0.6),
+                0 8px 24px rgba(0,0,0,0.4);
         }
+        /* top shimmer line */
+        .priv-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 15%; right: 15%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.13), transparent);
+            pointer-events: none; z-index: 1;
+        }
+        /* ambient glow top */
+        .priv-box::after {
+            content: '';
+            position: absolute;
+            top: -50px; left: 50%;
+            transform: translateX(-50%);
+            width: 200px; height: 100px;
+            background: radial-gradient(ellipse, rgba(37,244,238,0.1) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* header */
         .priv-header {
-            padding: 28px 24px 20px;
+            position: relative; z-index: 2;
+            padding: 1.6rem 1.5rem 1.2rem;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        /* icon above title */
+        .priv-header-icon {
+            width: 48px; height: 48px;
+            border-radius: 16px;
+            background: rgba(37,244,238,0.1);
+            box-shadow: 0 0 0 1px rgba(37,244,238,0.18) inset, 0 4px 14px rgba(37,244,238,0.1);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto .9rem;
+            animation: badgePop .45s cubic-bezier(.34,1.56,.64,1) .06s both;
         }
         .priv-header h2 {
             font-size: 1.2rem; font-weight: 800;
-            line-height: 1.3; color: #fff;
+            line-height: 1.25; color: #fff;
+            letter-spacing: -.025em;
         }
+
+        /* select section */
         .priv-section {
-            padding: 20px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            position: relative; z-index: 2;
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
         .priv-label {
-            font-size: .82rem; font-weight: 600;
-            color: rgba(255,255,255,0.55);
-            margin-bottom: 12px;
-            text-transform: uppercase; letter-spacing: .05em;
+            font-size: .72rem; font-weight: 700;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: .08em;
         }
-        /* Fake select dropdown */
-        .priv-select-wrap {
-            position: relative;
-        }
+        .priv-select-wrap { position: relative; }
         .priv-select {
             width: 100%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
+            background: transparent;
+            border: none;
+            border-radius: 14px;
             color: #fff;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: .95rem; font-weight: 600;
-            padding: 13px 18px;
+            font-size: .9rem; font-weight: 600;
+            padding: 12px 40px 12px 4px;
             cursor: pointer;
             appearance: none;
             outline: none;
-            transition: border-color .15s;
+            transition: opacity .15s;
         }
-        .priv-select:focus { border-color: var(--accent); }
-        .priv-select option { background: #1a1a1a; color: #fff; }
+        .priv-select:hover { opacity: .8; }
+        .priv-select:focus { outline: none; box-shadow: none; }
+        .priv-select option { background: #1c1c1e; color: #fff; }
+        .priv-select option { background: #1c1c1e; color: #fff; }
         .priv-select-arrow {
-            position: absolute; right: 16px; top: 50%;
+            position: absolute; right: 13px; top: 50%;
             transform: translateY(-50%);
-            pointer-events: none; color: rgba(255,255,255,0.5);
-            font-size: .85rem;
+            pointer-events: none;
+            color: rgba(255,255,255,0.4);
+            display: flex; align-items: center;
         }
-        /* Toggle rows */
+
+        /* toggle rows */
         .priv-toggles {
-            padding: 8px 24px 16px;
+            position: relative; z-index: 2;
+            padding: 0 1.4rem;
         }
         .priv-toggle-row {
             display: flex; align-items: center; justify-content: space-between;
-            gap: 16px; padding: 14px 0;
+            gap: 16px; padding: 1rem 0;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: opacity .15s;
         }
         .priv-toggle-row:last-child { border-bottom: none; }
+        .priv-toggle-row:hover { opacity: .85; }
         .priv-toggle-label { flex: 1; }
         .priv-toggle-label span {
-            display: block; font-size: .9rem; font-weight: 600; color: #fff;
+            display: block; font-size: .88rem; font-weight: 600; color: #fff;
+            letter-spacing: -.01em;
         }
         .priv-toggle-label small {
-            display: block; font-size: .75rem;
-            color: rgba(255,255,255,0.4); margin-top: 2px; line-height: 1.4;
+            display: block; font-size: .74rem;
+            color: rgba(255,255,255,0.35); margin-top: 2px; line-height: 1.4;
         }
-        /* iOS-style toggle */
+
+        /* iOS-style toggle — refined */
         .priv-toggle {
             position: relative; flex-shrink: 0;
-            width: 48px; height: 28px;
+            width: 46px; height: 26px; cursor: pointer;
         }
-        .priv-toggle input { opacity: 0; width: 0; height: 0; }
+        .priv-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
         .priv-toggle-track {
             position: absolute; inset: 0;
-            background: rgba(255,255,255,0.15);
-            border-radius: 14px;
-            cursor: pointer; transition: background .2s;
+            background: rgba(255,255,255,0.12);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background .25s ease, box-shadow .25s ease;
+            border: 1px solid rgba(255,255,255,0.08);
         }
         .priv-toggle input:checked ~ .priv-toggle-track {
             background: #25f4ee;
+            border-color: transparent;
+            box-shadow: 0 0 12px rgba(37,244,238,0.35);
         }
         .priv-toggle-track::after {
             content: '';
-            position: absolute; top: 3px; left: 3px;
-            width: 22px; height: 22px;
-            background: #fff; border-radius: 50%;
-            transition: transform .2s cubic-bezier(.34,1.4,.64,1);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            position: absolute; top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform .25s cubic-bezier(.34,1.5,.64,1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
         }
         .priv-toggle input:checked ~ .priv-toggle-track::after {
             transform: translateX(20px);
         }
-        /* Done button */
+
+        /* done button */
         .priv-done {
+            position: relative; z-index: 2;
             display: block; width: 100%;
             background: none; border: none;
-            border-top: 1px solid rgba(255,255,255,0.07);
-            color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 1rem; font-weight: 700;
-            padding: 18px; cursor: pointer;
-            transition: background .15s;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            color: #25f4ee;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: .93rem; font-weight: 700;
+            padding: 1.1rem;
+            cursor: pointer;
+            letter-spacing: -.01em;
+            transition: background .18s, color .18s;
+            overflow: hidden;
         }
-        .priv-done:hover { background: rgba(255,255,255,0.04); }
+        .priv-done::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -80%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(37,244,238,0.06), transparent);
+            transform: skewX(-18deg);
+            transition: left .5s ease;
+        }
+        .priv-done:hover::before { left: 160%; }
+        .priv-done:hover { background: rgba(37,244,238,0.05); }
+        .priv-done:active { transform: scale(.98); }
 
         /* ── EDIT PROFILE MODAL (TikTok style) ── */
         #editProfileModal {
@@ -3443,33 +3771,114 @@
         }
 
         /* TOAST */
-        .toast {
+        /* ── TOAST NOTIFICATIONS ── */
+        #toastContainer {
             position: fixed;
-            bottom: 2rem;
+            bottom: 1.5rem;
             left: 50%;
-            transform: translateX(-50%) translateY(80px);
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.85rem 1.5rem;
-            font-size: 0.88rem;
-            font-weight: 600;
-            z-index: 9999;
-            transition: transform 0.3s cubic-bezier(.16,1,.3,1), opacity 0.3s;
-            opacity: 0;
+            transform: translateX(-50%);
+            z-index: 99998;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: .6rem;
             pointer-events: none;
+            width: max-content;
+            max-width: 90vw;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .75rem 1.1rem .75rem .9rem;
+            border-radius: 14px;
+            font-size: .875rem;
+            font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            pointer-events: none;
+            white-space: nowrap;
+            max-width: 340px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+            transform: translateY(20px) scale(.92);
+            opacity: 0;
+            transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+            will-change: transform, opacity;
+        }
+        .toast.show {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        .toast.hiding {
+            transform: translateY(10px) scale(.9);
+            opacity: 0;
+            transition: transform .2s ease, opacity .2s ease;
+        }
+        .toast-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: .8rem;
+        }
+        .toast-msg { flex: 1; line-height: 1.3; }
+        .toast-bar {
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 2.5px;
+            border-radius: 0 0 14px 14px;
+            width: 100%;
+            transform-origin: left;
+            animation: toastBarShrink 2.6s linear forwards;
+        }
+        @keyframes toastBarShrink {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
         }
 
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { border-color: rgba(37,244,238,0.4); color: var(--accent2); }
-        .toast.error { border-color: rgba(254,44,85,0.4); color: var(--accent); }
-        .toast.info { border-color: var(--border); color: var(--text); }
+        /* success */
+        .toast.success {
+            background: linear-gradient(135deg, rgba(14,36,34,0.97) 0%, rgba(18,42,40,0.97) 100%);
+            border: 1px solid rgba(37,244,238,0.35);
+            color: #25f4ee;
+        }
+        .toast.success .toast-icon { background: rgba(37,244,238,0.15); color: #25f4ee; }
+        .toast.success .toast-bar { background: linear-gradient(90deg, #25f4ee, rgba(37,244,238,0.4)); }
+
+        /* error */
+        .toast.error {
+            background: linear-gradient(135deg, rgba(36,10,14,0.97) 0%, rgba(42,14,18,0.97) 100%);
+            border: 1px solid rgba(254,44,85,0.4);
+            color: #ff6b8a;
+        }
+        .toast.error .toast-icon { background: rgba(254,44,85,0.15); color: #fe2c55; }
+        .toast.error .toast-bar { background: linear-gradient(90deg, #fe2c55, rgba(254,44,85,0.4)); }
+
+        /* info */
+        .toast.info {
+            background: linear-gradient(135deg, rgba(20,20,28,0.97) 0%, rgba(26,26,36,0.97) 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.9);
+        }
+        .toast.info .toast-icon { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+        .toast.info .toast-bar { background: linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)); }
+
+        /* warning */
+        .toast.warning {
+            background: linear-gradient(135deg, rgba(36,28,10,0.97) 0%, rgba(42,34,12,0.97) 100%);
+            border: 1px solid rgba(255,170,0,0.35);
+            color: #ffaa00;
+        }
+        .toast.warning .toast-icon { background: rgba(255,170,0,0.12); color: #ffaa00; }
+        .toast.warning .toast-bar { background: linear-gradient(90deg, #ffaa00, rgba(255,170,0,0.4)); }
     </style>
 </head>
 <body>
 
-<!-- TOAST -->
-<div id="toast" class="toast"></div>
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
 
 <!-- ========== AUTH SCREEN ========== -->
 <div id="authScreen" class="auth-screen">
@@ -3505,7 +3914,7 @@
                     <span style="padding:0 10px;color:var(--text3);font-weight:700;font-size:0.9rem;flex-shrink:0;">@</span>
                     <input type="text" id="authUsername" placeholder="nomdutilisateur" style="border:none;background:transparent;border-radius:0;padding-left:0;" oninput="sanitizeUsernameInput(this)">
                 </div>
-                <div id="usernameError" style="color:#ff4d6d;font-size:0.78rem;margin-top:4px;display:none;">Ce nom d'utilisateur est déjà pris ❌</div>
+                <div id="usernameError" style="color:#ff4d6d;font-size:0.78rem;margin-top:4px;display:none;">Ce nom d'utilisateur est déjà pris</div>
             </div>
             <div class="form-group">
                 <label>Email</label>
@@ -3645,14 +4054,7 @@
                     <span class="tt-nav-text">Paramètres</span>
                 </div>
             </button>
-            <button class="tt-nav-item" onclick="handleLogout()" style="color: var(--accent);">
-                <div class="tt-nav-inner">
-                    <span class="tt-nav-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    </span>
-                    <span class="tt-nav-text">Déconnexion</span>
-                </div>
-            </button>
+
         </nav>
 
         <!-- User info at bottom -->
@@ -3896,10 +4298,10 @@
                             <button class="pm-share-btn" title="Intégrer" onclick="showToast('Fonctionnalité bientôt disponible','info')">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                             </button>
-                            <button class="pm-share-btn" title="WhatsApp" onclick="showToast('Lien copié !','success');copyLink()">
+                            <button class="pm-share-btn" title="WhatsApp" onclick="showToast('Lien copié','success');copyLink()">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.97 0C5.36 0 0 5.36 0 11.97c0 2.1.55 4.07 1.5 5.77L0 24l6.44-1.68A11.93 11.93 0 0011.97 24C18.58 24 24 18.64 24 11.97 24 5.36 18.58 0 11.97 0zm0 21.82c-1.82 0-3.53-.49-5.01-1.34l-.36-.21-3.72.97.99-3.63-.23-.37a9.85 9.85 0 01-1.52-5.24c0-5.44 4.43-9.87 9.87-9.87 2.64 0 5.12 1.03 6.99 2.9a9.85 9.85 0 012.9 6.99c-.02 5.44-4.45 9.87-9.89 9.87z"/></svg>
                             </button>
-                            <button class="pm-share-btn" title="Facebook" onclick="showToast('Lien copié !','success');copyLink()">
+                            <button class="pm-share-btn" title="Facebook" onclick="showToast('Lien copié','success');copyLink()">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                             </button>
                             <button class="pm-share-btn" title="Partager" onclick="copyLink()">
@@ -4074,7 +4476,7 @@
                             <button class="profile-icon-btn" title="Paramètres" onclick="openSettings()">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                             </button>
-                            <button class="profile-icon-btn" title="Partager le profil" onclick="showToast('Lien copié !','success')">
+                            <button class="profile-icon-btn" title="Partager le profil" onclick="showToast('Lien copié','success')">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                             </button>
                         </div>
@@ -4174,7 +4576,7 @@
                 <div class="report-item-icon">🚫</div>
                 <div class="report-item-text">Bloquer cet utilisateur</div>
             </div>
-            <div class="report-item" onclick="closeReportModal();showToast('Lien copié !','success')">
+            <div class="report-item" onclick="closeReportModal();showToast('Lien copié','success')">
                 <div class="report-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
                 <div class="report-item-text">Copier le lien du profil</div>
             </div>
@@ -4292,7 +4694,7 @@
                         <div class="stg-row-sub">Supprime définitivement ton compte et toutes tes données</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="showToast('Fonctionnalité bientôt disponible','info')">Supprimer</button>
+                        <button class="stg-row-action danger" onclick="openConfirmDeleteAccount()">Supprimer</button>
                     </div>
                 </div>
 
@@ -4341,7 +4743,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgPrivateAccount" onchange="showToast(this.checked?'Compte privé 🔒':'Compte public 🌍','info')">
+                            <input type="checkbox" id="stgPrivateAccount" onchange="showToast(this.checked?'Compte privé':'Compte public','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4387,7 +4789,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgLikedVisible" checked onchange="userProfile.likedVisible=this.checked;showToast(this.checked?'Vidéos aimées publiques ❤️':'Vidéos aimées privées 🔒','info')">
+                            <input type="checkbox" id="stgLikedVisible" checked onchange="userProfile.likedVisible=this.checked;showToast(this.checked?'Vidéos aimées publiques':'Vidéos aimées privées','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4498,7 +4900,7 @@
                         <div class="stg-row-sub">Reçois une copie de tes données HGGSP</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-btn" onclick="showToast('Demande envoyée par email 📧','success')">Demander</button>
+                        <button class="stg-btn" onclick="showToast('Demande envoyée par email','success')">Demander</button>
                     </div>
                 </div>
                 <div class="stg-row">
@@ -4696,7 +5098,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgLang" onchange="showToast('Langue mise à jour ✓','success')">
+                            <select class="stg-select" id="stgLang" onchange="showToast('Langue mise à jour','success')">
                                 <option value="fr">Français</option>
                                 <option value="en">English</option>
                                 <option value="es">Español</option>
@@ -4862,7 +5264,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stg2FA" onchange="showToast(this.checked?'2FA activé 🔐':'2FA désactivé','info')">
+                            <input type="checkbox" id="stg2FA" onchange="showToast(this.checked?'2FA activé':'2FA désactivé','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4900,7 +5302,7 @@
                         <div class="stg-row-sub">Met fin à toutes les sessions actives sauf celle-ci</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés 🔒','success')">Déconnecter</button>
+                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés','success')">Déconnecter</button>
                     </div>
                 </div>
 
@@ -4964,7 +5366,7 @@
                         <div class="stg-row-sub">Tu seras redirigé vers la page de connexion</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="closeSettings();handleLogout()">Déconnecter</button>
+                        <button class="stg-row-action danger" onclick="openConfirmLogout()">Déconnecter</button>
                     </div>
                 </div>
                 <div class="stg-row">
@@ -4973,7 +5375,7 @@
                         <div class="stg-row-sub">Met fin à toutes les sessions actives partout</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés 🔒','success')">Tout déconnecter</button>
+                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés','success')">Tout déconnecter</button>
                     </div>
                 </div>
             </div>
@@ -5164,7 +5566,7 @@
         const handle = '@' + usernameRaw;
         // Check duplicate username
         const taken = posts.some(p => p.username.toLowerCase() === handle.toLowerCase());
-        if (taken) { showToast("Ce pseudo est déjà pris ❌", 'error'); return; }
+        if (taken) { showToast('Ce pseudo est déjà pris', 'error'); return; }
 
         const firebaseUser = window._pendingGoogleUser;
         if (!firebaseUser) return;
@@ -5177,7 +5579,7 @@
             for (const d of usersSnap.docs) {
                 const data = d.data();
                 if (data.email === firebaseUser.email && d.id !== firebaseUser.uid) {
-                    showToast("Un compte existe déjà avec cet email ❌ Connecte-toi à ton compte existant.", 'error');
+                    showToast('Un compte existe déjà avec cet email. Connecte-toi à ton compte existant.', 'error');
                     document.getElementById('googleProfileModal').style.display = 'none';
                     window._pendingGoogleUser = null;
                     if (window._firebaseAuth && window._firebaseFns.signOut) {
@@ -5406,12 +5808,27 @@
     let userProfile = { username: 'user', email: 'user@example.com', avatar: '👤', canPublish: false, posts: [], likedPosts: [], following: [], repostedPosts: [], likedVisible: true };
 
     // ── TOAST ──
+    const _toastIcons = {
+        success: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+        error:   `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+        info:    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        warning: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    };
     function showToast(msg, type = 'info') {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = `toast ${type}`;
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 2600);
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.style.position = 'relative';
+        toast.innerHTML = `<div class="toast-icon">${_toastIcons[type] || _toastIcons.info}</div><div class="toast-msg">${msg}</div><div class="toast-bar"></div>`;
+        container.appendChild(toast);
+        requestAnimationFrame(() => { requestAnimationFrame(() => toast.classList.add('show')); });
+        const dur = 2600;
+        setTimeout(() => {
+            toast.classList.add('hiding');
+            toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+            setTimeout(() => toast.remove(), 400);
+        }, dur);
     }
 
     // ── LOCAL STORAGE ──
@@ -5577,7 +5994,7 @@
                         isNewUser = true;
                     } catch(createErr) {
                         if (createErr.code === 'auth/email-already-in-use') {
-                            showToast('Mot de passe incorrect ❌', 'error');
+                            showToast('Mot de passe incorrect', 'error');
                         } else if (createErr.code === 'auth/weak-password') {
                             showToast('Mot de passe trop court (min 6 car.)', 'error');
                         } else {
@@ -5587,7 +6004,7 @@
                         return;
                     }
                 } else if (signInErr.code === 'auth/invalid-email') {
-                    showToast('Email invalide ❌', 'error');
+                    showToast('Email invalide', 'error');
                     if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
                     return;
                 } else {
@@ -5654,8 +6071,8 @@
 
             window._googleLoginHandled = true;
             saveSession();
-            if (finalRole === 'prof') showToast('Connecté en tant que Professeur 👨‍🏫', 'success');
-            else showToast('Connecté ✅', 'success');
+            if (finalRole === 'prof') showToast('Connecté en tant que Professeur', 'success');
+            else showToast('Connecté', 'success');
             if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
             showApp();
 
@@ -5668,15 +6085,15 @@
 
     function handleCodeValidation() {
         const code = document.getElementById('codeInput').value.toUpperCase().trim();
-        if (!validCodes.hasOwnProperty(code)) { showToast('Code invalide ❌', 'error'); return; }
-        if (validCodes[code]) { showToast('Code déjà utilisé ⚠️', 'error'); return; }
+        if (!validCodes.hasOwnProperty(code)) { showToast('Code invalide', 'error'); return; }
+        if (validCodes[code]) { showToast('Code déjà utilisé', 'error'); return; }
         validCodes[code] = true;
         if (currentUser) {
             currentUser.canPublish = true;
             currentUser.role = 'prof';
             userProfile.canPublish = true;
             userProfile.role = 'prof';
-            showToast('Accès Prof débloqué ✅', 'success');
+            showToast('Accès Prof débloqué', 'success');
             document.getElementById('codeInput').value = '';
             updateUploadTab();
             // Update badge
@@ -5697,7 +6114,7 @@
             const { sendPasswordResetEmail } = window._firebaseFns;
             if (!auth || !sendPasswordResetEmail) { showToast("Fonction non disponible", 'error'); return; }
             await sendPasswordResetEmail(auth, email);
-            showToast(`Email envoyé à ${email} 📧 Vérifie ta boîte mail !`, 'success');
+            showToast(`Email envoyé à ${email} — Vérifie ta boîte mail`, 'success');
         } catch(e) {
             if (e.code === 'auth/user-not-found') showToast("Email introuvable", 'error');
             else showToast("Erreur : " + e.message, 'error');
@@ -5877,7 +6294,7 @@
         const display = document.getElementById('stgCurrentRegion');
         if (display) display.textContent = _selectedRegion;
         saveSession();
-        showToast('Région mise à jour ✅', 'success');
+        showToast('Région mise à jour', 'success');
         toggleRegionChange();
     }
 
@@ -5900,7 +6317,7 @@
         const confirmPwd = document.getElementById('stgConfirmPassword').value;
         if (!currentPwd) { showToast('Saisis ton mot de passe actuel', 'error'); return; }
         if (!newPwd || newPwd.length < 6) { showToast('Le nouveau mot de passe doit faire au moins 6 caractères', 'error'); return; }
-        if (newPwd !== confirmPwd) { showToast('Les mots de passe ne correspondent pas ❌', 'error'); return; }
+        if (newPwd !== confirmPwd) { showToast('Les mots de passe ne correspondent pas', 'error'); return; }
         try {
             const auth = window._firebaseAuth;
             const { signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } = window._firebaseFns;
@@ -5909,10 +6326,10 @@
             await signInWithEmailAndPassword(auth, currentUser.email, currentPwd);
             // Update password
             await auth.currentUser.updatePassword(newPwd);
-            showToast('Mot de passe mis à jour avec succès ✅', 'success');
+            showToast('Mot de passe mis à jour', 'success');
             togglePasswordChange();
         } catch(e) {
-            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe actuel incorrect ❌', 'error');
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe actuel incorrect', 'error');
             else if (e.code === 'auth/weak-password') showToast('Mot de passe trop faible', 'error');
             else showToast('Erreur : ' + e.message, 'error');
         }
@@ -5943,10 +6360,10 @@
             await signInWithEmailAndPassword(auth, currentUser.email, password);
             // Update email via Firebase
             await auth.currentUser.verifyBeforeUpdateEmail(newEmail);
-            showToast(`Email de vérification envoyé à ${newEmail} 📧`, 'success');
+            showToast(`Email de vérification envoyé à ${newEmail}`, 'success');
             toggleEmailChange();
         } catch(e) {
-            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe incorrect ❌', 'error');
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe incorrect', 'error');
             else if (e.code === 'auth/email-already-in-use') showToast('Cet email est déjà utilisé', 'error');
             else showToast('Erreur : ' + e.message, 'error');
         }
@@ -6660,7 +7077,7 @@
         if (!c) return;
         c.creatorLiked = !c.creatorLiked;
         renderModalComments(post);
-        showToast(c.creatorLiked ? '❤️ Like créateur ajouté !' : 'Like retiré', 'success');
+        showToast(c.creatorLiked ? 'Like créateur ajouté' : 'Like retiré', 'success');
     }
 
     function toggleReplyInput(idx) {
@@ -6701,7 +7118,7 @@
             const list = document.getElementById(`replies-list-${commentIdx}`);
             if (list) { list.style.display = 'flex'; list.style.flexDirection = 'column'; }
         }, 50);
-        showToast('Réponse ajoutée ✅', 'success');
+        showToast('Réponse ajoutée', 'success');
     }
 
     function likeComment(el, idx) {
@@ -6817,7 +7234,7 @@
         document.getElementById('pmSaveBtn').className = 'post-modal-act' + (post.isSaved ? ' saved' : '');
         const icon = document.getElementById('pmSaveIcon');
         if (icon) icon.setAttribute('fill', post.isSaved ? '#ffd700' : 'none');
-        showToast(post.isSaved ? 'Post sauvegardé 🔖' : 'Sauvegarde retirée', 'info');
+        showToast(post.isSaved ? 'Post sauvegardé' : 'Sauvegarde retirée', 'info');
         saveSession();
         autoSavePost(post);
     }
@@ -6835,7 +7252,7 @@
         } else {
             if (!userProfile.following.includes(post.authorId)) userProfile.following.push(post.authorId);
         }
-        showToast(isFollowing ? 'Suivi annulé' : 'Maintenant suivi ✅', 'success');
+        showToast(isFollowing ? 'Suivi annulé' : 'Maintenant suivi', 'success');
         // Update following count in profile
         const followingCount = document.querySelectorAll('.ps-stat');
         if (followingCount[1]) followingCount[1].querySelector('.ps-num').textContent = userProfile.following.length;
@@ -6856,7 +7273,7 @@
         } else {
             userProfile.repostedPosts.push(post.id);
             post.reposts = (post.reposts || 0) + 1;
-            showToast('Post republié 🔁', 'success');
+            showToast('Post republié', 'success');
         }
         document.getElementById('pmRepostCount').textContent = formatNum(post.reposts || 0);
         document.getElementById('pmRepostBtn').className = 'post-modal-act' + (!isReposted ? ' saved' : '');
@@ -6869,7 +7286,7 @@
 
     function copyLink() {
         const input = document.getElementById('pmLinkInput');
-        navigator.clipboard.writeText(input.value).then(() => showToast('Lien copié ! 🔗', 'success'));
+        navigator.clipboard.writeText(input.value).then(() => showToast('Lien copié', 'success'));
     }
 
     // ── KEYBOARD NAV ──
@@ -7094,12 +7511,12 @@
 
     function validateCodeFromUpload() {
         const code = document.getElementById('codeInput2').value.toUpperCase().trim();
-        if (!validCodes.hasOwnProperty(code)) { showToast('Code invalide ❌', 'error'); return; }
-        if (validCodes[code]) { showToast('Code déjà utilisé ⚠️', 'error'); return; }
+        if (!validCodes.hasOwnProperty(code)) { showToast('Code invalide', 'error'); return; }
+        if (validCodes[code]) { showToast('Code déjà utilisé', 'error'); return; }
         currentUser.canPublish = true;
         userProfile.canPublish = true;
         validCodes[code] = true;
-        showToast('Accès débloqué ✅', 'success');
+        showToast('Accès débloqué', 'success');
         updateUploadTab();
     }
 
@@ -7107,7 +7524,7 @@
         const title = document.getElementById('postTitle').value.trim();
         const desc = document.getElementById('postDesc').value.trim();
         const rawTags = document.getElementById('postHashtags') ? document.getElementById('postHashtags').value.trim() : '';
-        if (!title) { showToast('Titre obligatoire ⚠️', 'error'); return; }
+        if (!title) { showToast('Titre obligatoire', 'error'); return; }
         // Parse hashtags
         const hashtags = rawTags.split(/\s+/).filter(t => t.startsWith('#') && t.length > 1);
 
@@ -7156,7 +7573,7 @@
         // Auto-save to Firestore (permanent, synced for everyone)
         autoSavePost(newPost);
         saveUserToFirestore().catch(()=>{});
-        showToast('✅ Publié et sauvegardé automatiquement !', 'success');
+        showToast('Publié et sauvegardé', 'success');
         if (publishBtn) { publishBtn.disabled = false; publishBtn.textContent = 'Publier →'; }
         switchTab('blog', null);
     }
@@ -7189,7 +7606,7 @@
             wrap.style.display = 'block';
             zone.style.display = 'none';
         }
-        showToast('Vidéo chargée ✅', 'success');
+        showToast('Vidéo chargée', 'success');
     }
 
     function removeVideo() {
@@ -7271,7 +7688,7 @@
         const emoji = document.getElementById('avatarEmoji');
         if (img) { img.src = url; img.style.display = 'block'; }
         if (emoji) emoji.style.display = 'none';
-        showToast('Photo de profil mise à jour ✅', 'success');
+        showToast('Photo de profil mise à jour', 'success');
     }
 
     function startEditName() {
@@ -7295,7 +7712,7 @@
             newEl.textContent = newName;
             input.replaceWith(newEl);
             if (displayEl) displayEl.textContent = newName.charAt(0).toUpperCase() + newName.slice(1);
-            showToast('Pseudo mis à jour ✅', 'success');
+            showToast('Pseudo mis à jour', 'success');
         }
 
         input.addEventListener('blur', save);
@@ -7391,7 +7808,11 @@
             card.onclick = (e) => { if (!e.target.closest('.tile-dots-btn') && !e.target.closest('.tile-dots-menu')) openPostModal(p.id); };
 
             const isOwn = currentProfileTab === 'videos' && currentUser && String(p.authorId) === String(currentUser.id);
-            const privacyBadge = p.privacy === 'private' ? '🔒 Privée' : p.privacy === 'followers' ? '👥 Abonnés' : '';
+            const privacyBadge = p.privacy === 'private'
+                ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Privée`
+                : p.privacy === 'followers'
+                ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Abonnés`
+                : '';
 
             card.innerHTML = `
                 <div class="tile-bg">
@@ -7493,7 +7914,7 @@
             document.documentElement.style.setProperty('--text2', '#555');
             document.documentElement.style.setProperty('--text3', '#999');
             document.documentElement.style.setProperty('--border', 'rgba(0,0,0,0.1)');
-            showToast('Mode clair activé ☀️', 'info');
+            showToast('Mode clair activé', 'info');
         } else {
             document.documentElement.style.setProperty('--bg', '#010101');
             document.documentElement.style.setProperty('--surface', '#161616');
@@ -7502,7 +7923,7 @@
             document.documentElement.style.setProperty('--text2', 'rgba(255,255,255,0.55)');
             document.documentElement.style.setProperty('--text3', 'rgba(255,255,255,0.3)');
             document.documentElement.style.setProperty('--border', 'rgba(255,255,255,0.07)');
-            showToast('Mode sombre activé 🌙', 'info');
+            showToast('Mode sombre activé', 'info');
         }
     }
 
@@ -7555,7 +7976,7 @@
             const found = accentColors.find(c => c.value === color);
             labelEl.textContent = found ? found.name : '';
         }
-        showToast('Couleur mise à jour ✅', 'success');
+        showToast('Couleur mise à jour', 'success');
     }
 
     function openProfileEditModal() {
@@ -7589,7 +8010,7 @@
         const currentHandle = userProfile.username;
         if (handle !== currentHandle) {
             const taken = posts.some(p => p.username.toLowerCase() === handle.toLowerCase() && String(p.authorId) !== String(currentUser?.id));
-            if (taken) { showToast('Ce pseudo est déjà pris ❌', 'error'); return; }
+            if (taken) { showToast('Ce pseudo est déjà pris', 'error'); return; }
         }
         userProfile.displayName = newDisplay;
         userProfile.username = handle;
@@ -7606,7 +8027,7 @@
         saveUserToFirestore().catch(()=>{});
         closeEditProfileModal();
         updateProfileTab();
-        showToast('Profil mis à jour ✅', 'success');
+        showToast('Profil mis à jour', 'success');
     }
 
     function openBioModal() {
@@ -7628,7 +8049,7 @@
         const bioEl = document.getElementById('profileBio');
         if (bioEl) bioEl.textContent = bio || 'Lycée Félix Ébouié — HGGSP';
         document.getElementById('spSubModal').style.display = 'none';
-        showToast('Bio mise à jour ✅', 'success');
+        showToast('Bio mise à jour', 'success');
     }
 
     // ── SEARCH ──
@@ -7852,10 +8273,10 @@
                                     : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Suivre`
                                 }
                             </button>
-                            <button class="profile-icon-btn" title="Message" onclick="${isFollowing ? `closeUserProfile();sendMessageToUser('${authorId}')` : `showToast('Abonne-toi pour envoyer un message 💬','info')`}" style="${isFollowing ? 'color:var(--accent2);border-color:rgba(37,244,238,0.3);' : ''}">
+                            <button class="profile-icon-btn" title="Message" onclick="${isFollowing ? `closeUserProfile();sendMessageToUser('${authorId}')` : `showToast('Abonne-toi pour envoyer un message','info')`}" style="${isFollowing ? 'color:var(--accent2);border-color:rgba(37,244,238,0.3);' : ''}">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                             </button>
-                            <button class="profile-icon-btn" title="Partager" onclick="showToast('Lien copié !','success')">
+                            <button class="profile-icon-btn" title="Partager" onclick="showToast('Lien copié','success')">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                             </button>
                             <button class="profile-icon-btn" title="Plus" onclick="openReportModal('${u.author}','${authorId}')">
@@ -8052,7 +8473,7 @@
         if (!blockedUsers.includes(reportTargetId)) blockedUsers.push(reportTargetId);
         closeReportModal();
         closeUserProfile();
-        showToast('Utilisateur bloqué 🚫', 'success');
+        showToast('Utilisateur bloqué', 'success');
     }
 
     function toggleFollowUserProfile(authorId, btn) {
@@ -8069,7 +8490,7 @@
             btn.className = 'profile-main-btn follow-btn-active';
             btn.style.cssText = 'background:var(--surface2);color:var(--text2);border:1.5px solid var(--border);';
             btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Suivi`;
-            showToast('Maintenant suivi ✅', 'success');
+            showToast('Maintenant suivi', 'success');
         }
         // Update own following count on profile tab
         const fc = document.getElementById('followingCountProfile');
@@ -8151,42 +8572,37 @@
 
     function toggleTileDots(e, postId) {
         e.stopPropagation();
-        // Close existing menu
-        if (activeTileMenu) {
-            activeTileMenu.remove();
-            activeTileMenu = null;
-            return;
-        }
+        if (activeTileMenu) { activeTileMenu.remove(); activeTileMenu = null; return; }
         const post = posts.find(p => p.id === postId);
         if (!post) return;
         const btn = e.currentTarget;
-        const tile = btn.closest('.profile-post-tile');
+        const rect = btn.getBoundingClientRect();
 
         const menu = document.createElement('div');
         menu.className = 'tile-dots-menu';
+        menu.style.cssText = `position:fixed;top:${rect.bottom + 6}px;right:${window.innerWidth - rect.right}px;`;
         menu.innerHTML = `
             <div class="tile-dots-menu-item" onclick="setPostPrivacy(${postId},'public')">
-                <span class="mi-icon">🌍</span> Publique <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;">${post.privacy === 'public' ? '✓' : ''}</span>
+                <span class="mi-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></span> Publique <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;display:flex;align-items:center;">${post.privacy === 'public' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25f4ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}</span>
             </div>
             <div class="tile-dots-menu-item" onclick="setPostPrivacy(${postId},'followers')">
-                <span class="mi-icon">👥</span> Abonnés seulement <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;">${post.privacy === 'followers' ? '✓' : ''}</span>
+                <span class="mi-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span> Abonnés seulement <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;display:flex;align-items:center;">${post.privacy === 'followers' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25f4ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}</span>
             </div>
             <div class="tile-dots-menu-item" onclick="setPostPrivacy(${postId},'private')">
-                <span class="mi-icon">🔒</span> Privée (toi seul) <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;">${post.privacy === 'private' ? '✓' : ''}</span>
+                <span class="mi-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span> Privée (toi seul) <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:auto;display:flex;align-items:center;">${post.privacy === 'private' ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25f4ee" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>` : ''}</span>
             </div>
+            <div class="tile-dots-menu-item" style="height:1px;padding:0;background:rgba(255,255,255,0.05);pointer-events:none;"></div>
             <div class="tile-dots-menu-item danger" onclick="deletePost(${postId})">
                 <span class="mi-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></span> Supprimer
             </div>
         `;
-        tile.appendChild(menu);
+        document.body.appendChild(menu);
         activeTileMenu = menu;
 
-        // Close on outside click
         setTimeout(() => {
             document.addEventListener('click', function handler(ev) {
                 if (!menu.contains(ev.target)) {
-                    menu.remove();
-                    activeTileMenu = null;
+                    menu.remove(); activeTileMenu = null;
                     document.removeEventListener('click', handler);
                 }
             });
@@ -8202,7 +8618,7 @@
         if (up) up.privacy = privacy;
         if (activeTileMenu) { activeTileMenu.remove(); activeTileMenu = null; }
         saveSession();
-        const labels = { public: 'Publique 🌍', followers: 'Abonnés seulement 👥', private: 'Privée 🔒' };
+        const labels = { public: 'Publique', followers: 'Abonnés seulement', private: 'Privée' };
         showToast(`Vidéo → ${labels[privacy]}`, 'success');
         renderProfileGrid();
         renderPosts();
@@ -8232,7 +8648,7 @@
             } catch(e) { console.warn('Firestore delete error:', e); }
         }
 
-        showToast('Publication supprimée 🗑️', 'success');
+        showToast('Publication supprimée', 'success');
         renderProfileGrid();
         renderPosts();
     }
@@ -8679,6 +9095,37 @@
         await _doDeletePost(postId);
     }
 
+    // ══════════ CONFIRM LOGOUT MODAL ══════════
+    function openConfirmLogout() {
+        const m = document.getElementById('confirmLogoutModal');
+        m.classList.add('open');
+        _resetModalAnim(m);
+    }
+    function closeConfirmLogout() {
+        document.getElementById('confirmLogoutModal').classList.remove('open');
+    }
+
+    // ══════════ CONFIRM DELETE ACCOUNT MODAL ══════════
+    function openConfirmDeleteAccount() {
+        const m = document.getElementById('confirmDeleteAccountModal');
+        m.classList.add('open');
+        _resetModalAnim(m);
+    }
+    function closeConfirmDeleteAccount() {
+        document.getElementById('confirmDeleteAccountModal').classList.remove('open');
+    }
+
+    function _resetModalAnim(modal) {
+        const el = modal.querySelector('.modal-animate-in');
+        if (!el) return;
+        el.style.animation = 'none';
+        [...el.children].forEach(c => { c.style.animation = 'none'; });
+        requestAnimationFrame(() => {
+            el.style.animation = '';
+            [...el.children].forEach(c => { c.style.animation = ''; });
+        });
+    }
+
     // ══════════ PM OWNER DROPDOWN ══════════
     function togglePmOwnerDropdown(e) {
         e.stopPropagation();
@@ -8711,7 +9158,7 @@
         const up = userProfile.posts.find(p => p.id === currentModalPostId);
         if (up) up.privacy = value;
         saveSession();
-        const labels = { public: 'Publique 🌍', followers: 'Abonnés seulement 👥', private: 'Privée 🔒' };
+        const labels = { public: 'Publique', followers: 'Abonnés seulement', private: 'Privée' };
         showToast(`Confidentialité → ${labels[value]}`, 'success');
         closePmOwnerDropdown();
         renderProfileGrid();
@@ -8761,7 +9208,7 @@
         if (tc) post.allowComments = tc.checked;
         if (tr) post.allowSharing = tr.checked;
         saveSession();
-        showToast('Paramètres sauvegardés ✓', 'success');
+        showToast('Paramètres sauvegardés', 'success');
         closePrivacyModal();
         renderProfileGrid();
         renderPosts();
@@ -8774,6 +9221,10 @@
         if (cm && e.target === cm) closeConfirmDelete();
         const epm = document.getElementById('editProfileModal');
         if (epm && e.target === epm) closeEditProfileModal();
+        const lm = document.getElementById('confirmLogoutModal');
+        if (lm && e.target === lm) closeConfirmLogout();
+        const dam = document.getElementById('confirmDeleteAccountModal');
+        if (dam && e.target === dam) closeConfirmDeleteAccount();
     });
 
     // Live username preview
@@ -8841,15 +9292,77 @@
     </div>
 </div>
 
-<!-- Confirm Delete Modal -->
-<div id="confirmDeleteModal">
-    <div class="confirm-delete-box">
-        <div class="confirm-delete-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></div>
-        <div class="confirm-delete-title">Supprimer cette vidéo ?</div>
-        <div class="confirm-delete-desc">Cette action est irréversible.<br>La vidéo sera définitivement supprimée.</div>
-        <div class="confirm-delete-actions">
-            <button class="confirm-btn-cancel" onclick="closeConfirmDelete()">Annuler</button>
-            <button class="confirm-btn-delete" onclick="confirmDeletePost()">Supprimer</button>
+<!-- Confirm Delete Post Modal -->
+<div id="confirmDeleteModal" class="action-modal-overlay">
+    <div class="action-modal-box glow-danger" style="border:1px solid rgba(254,44,85,0.12);">
+        <div class="action-modal-inner">
+            <div class="modal-icon-badge danger">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fe2c55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </div>
+            <div class="modal-animate-in">
+                <div class="action-modal-title">Supprimer cette vidéo ?</div>
+                <div class="action-modal-desc">Cette action est <strong>irréversible</strong>.<br>La vidéo sera définitivement supprimée.</div>
+                <div class="action-modal-actions">
+                    <button class="action-modal-btn btn-danger" onclick="confirmDeletePost()" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                        <span class="btn-inner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                            Supprimer
+                        </span>
+                    </button>
+                    <div class="action-modal-separator"></div>
+                    <button class="action-modal-btn btn-cancel" onclick="closeConfirmDelete()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Logout Modal -->
+<div id="confirmLogoutModal" class="action-modal-overlay">
+    <div class="action-modal-box glow-danger" style="border:1px solid rgba(254,44,85,0.12);">
+        <div class="action-modal-inner">
+            <div class="modal-icon-badge danger">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fe2c55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div class="modal-animate-in">
+                <div class="action-modal-title">Se déconnecter ?</div>
+                <div class="action-modal-desc">Tu seras redirigé vers la page de connexion.<br>Tes données sont <strong>sauvegardées</strong>.</div>
+                <div class="action-modal-actions">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmLogout();closeSettings();handleLogout()" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                        <span class="btn-inner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Se déconnecter
+                        </span>
+                    </button>
+                    <div class="action-modal-separator"></div>
+                    <button class="action-modal-btn btn-neutral" onclick="closeConfirmLogout()" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">Rester connecté</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete Account Modal -->
+<div id="confirmDeleteAccountModal" class="action-modal-overlay">
+    <div class="action-modal-box glow-danger" style="border:1px solid rgba(254,44,85,0.12);">
+        <div class="action-modal-inner">
+            <div class="modal-icon-badge danger">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fe2c55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="modal-animate-in">
+                <div class="action-modal-title">Supprimer le compte ?</div>
+                <div class="action-modal-desc">Cette action est <strong>définitive et irréversible</strong>.<br>Toutes tes vidéos, abonnés et données seront supprimés à jamais.</div>
+                <div class="action-modal-actions">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDeleteAccount();showToast('Fonctionnalité bientôt disponible','info')" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                        <span class="btn-inner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+                            Supprimer le compte
+                        </span>
+                    </button>
+                    <div class="action-modal-separator"></div>
+                    <button class="action-modal-btn btn-cancel" onclick="closeConfirmDeleteAccount()">Garder mon compte</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -8858,6 +9371,9 @@
 <div id="privacyModal">
     <div class="priv-box">
         <div class="priv-header">
+            <div class="priv-header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25f4ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
             <h2>Paramètres de<br>confidentialité</h2>
         </div>
         <div class="priv-section">
@@ -8868,7 +9384,9 @@
                     <option value="followers">Abonnés seulement</option>
                     <option value="private">Seulement moi</option>
                 </select>
-                <span class="priv-select-arrow">▼</span>
+                <span class="priv-select-arrow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
             </div>
         </div>
         <div class="priv-toggles">
