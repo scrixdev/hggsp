@@ -11,6 +11,7 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, updateEmail, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAUzRgupz7ykTxprH6xxlq11fwH4WROyuE",
@@ -34,6 +35,21 @@
         window._firebaseProvider = provider;
         window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, updateEmail, deleteUser, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit };
         window._firebaseStorageFns = { ref, uploadBytesResumable, getDownloadURL };
+
+        // FCM Messaging
+        try {
+            const messaging = getMessaging(app);
+            window._firebaseMessaging = messaging;
+            window._fcmGetToken = getToken;
+            window._fcmOnMessage = onMessage;
+            // Handle foreground notifications
+            onMessage(messaging, (payload) => {
+                const { title, body } = payload.notification || {};
+                if (title) {
+                    if (window.showToast) showToast(`🔔 ${title} — ${body || ''}`, 'info');
+                }
+            });
+        } catch(e) { console.warn('FCM init error:', e); }
 
         // Watch auth state — restore session on page reload for ALL Firebase users
         onAuthStateChanged(auth, async (user) => {
@@ -5012,7 +5028,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifLike" checked onchange="saveSettingsToFirestore('settings.notifLike',this.checked);showToast('Préférence sauvegardée ✓','info')">
+                            <input type="checkbox" id="stgNotifLike" checked onchange="saveSettingsToFirestore('settings.notifLike',this.checked);if(this.checked)initPushNotifications();showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5098,7 +5114,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgEmailWeekly" onchange="saveSettingsToFirestore('settings.emailWeekly',this.checked);showToast('Préférence sauvegardée ✓','info')">
+                            <input type="checkbox" id="stgEmailWeekly" onchange="saveSettingsToFirestore('settings.emailWeekly',this.checked);if(this.checked)sendWeeklyDigest();showToast(this.checked?'Emails hebdo activés ✓ — premier email envoyé':'Emails hebdo désactivés','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -6177,8 +6193,13 @@
 
             window._googleLoginHandled = true;
             saveSession();
-            if (finalRole === 'prof') showToast('Connecté en tant que Professeur', 'success');
-            else showToast('Connecté', 'success');
+            if (isNewUser) {
+                sendWelcomeEmail(firebaseUser.email, finalDisplayName).catch(() => {});
+                showToast('Compte créé — email de bienvenue envoyé 🎉', 'success');
+            } else {
+                if (finalRole === 'prof') showToast('Connecté en tant que Professeur', 'success');
+                else showToast('Connecté', 'success');
+            }
             if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Se connecter'; }
             showApp();
 
@@ -8526,6 +8547,101 @@
             const { doc, updateDoc } = window._firebaseFns;
             await updateDoc(doc(window._firebaseDb, 'users', currentUser.id), { [field]: value });
         } catch(e) { console.warn('Settings save error:', e); }
+    }
+
+    // ═══════════════════════════════════════════
+    // NOTIFICATIONS PUSH — FCM
+    // ═══════════════════════════════════════════
+    const VAPID_KEY = 'BAsDOlEGwSEETKFYz8lMQQD5Sz9S5NtNirRXYbJxs6VMBCwJ07_SgwzSuXGCOjoNyPH7-BQo3MCUqGP4Kd5RWIc';
+
+    async function initPushNotifications() {
+        if (!window._firebaseMessaging || !currentUser) return;
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') { showToast('Notifications refusées', 'error'); return; }
+            const token = await window._fcmGetToken(window._firebaseMessaging, {
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            });
+            if (token) {
+                // Save token to Firestore so server can send targeted notifications
+                const { doc, updateDoc } = window._firebaseFns;
+                await updateDoc(doc(window._firebaseDb, 'users', currentUser.id), { fcmToken: token });
+                showToast('Notifications push activées ✓', 'success');
+            }
+        } catch(e) {
+            console.warn('Push init error:', e);
+            showToast('Erreur notifications : ' + e.message, 'error');
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    // EMAILS — Trigger Email Extension
+    // ═══════════════════════════════════════════
+    async function sendEmailViaFirestore(toEmail, subject, htmlBody) {
+        if (!window._firebaseDb) return;
+        try {
+            const { collection, addDoc } = window._firebaseFns;
+            await addDoc(collection(window._firebaseDb, 'mail'), {
+                to: toEmail,
+                message: {
+                    subject: subject,
+                    html: htmlBody
+                }
+            });
+        } catch(e) { console.warn('Email send error:', e); }
+    }
+
+    async function sendWeeklyDigest() {
+        if (!currentUser || !currentUser.email) return;
+        const recentPosts = posts.slice(0, 5);
+        const postsHtml = recentPosts.map(p => `
+            <div style="padding:12px;border-bottom:1px solid #eee;">
+                <strong>${p.author}</strong> — ${p.desc || p.title || 'Nouveau post'}<br>
+                <small>❤️ ${p.likes || 0} likes · 💬 ${p.comments || 0} commentaires</small>
+            </div>
+        `).join('');
+
+        await sendEmailViaFirestore(
+            currentUser.email,
+            '📚 HGGSP Platform — Résumé de la semaine',
+            `
+            <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+                <h2 style="color:#fe2c55;">📚 HGGSP Platform</h2>
+                <p>Bonjour ${currentUser.displayName || currentUser.username} 👋</p>
+                <p>Voici ce qui s'est passé cette semaine sur la plateforme :</p>
+                <div style="border:1px solid #eee;border-radius:8px;overflow:hidden;">
+                    ${postsHtml || '<p style="padding:12px;">Aucun post cette semaine.</p>'}
+                </div>
+                <p style="margin-top:20px;color:#888;font-size:12px;">
+                    Tu reçois cet email car tu as activé les notifications email dans tes paramètres.<br>
+                    HGGSP Platform — Lycée Félix Ébouié
+                </p>
+            </div>
+            `
+        );
+    }
+
+    // Envoie email de bienvenue à l'inscription
+    async function sendWelcomeEmail(email, displayName) {
+        await sendEmailViaFirestore(
+            email,
+            '🎉 Bienvenue sur HGGSP Platform !',
+            `
+            <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+                <h2 style="color:#fe2c55;">📚 HGGSP Platform</h2>
+                <p>Bonjour ${displayName} 👋</p>
+                <p>Ton compte a bien été créé ! Tu peux maintenant :</p>
+                <ul>
+                    <li>📹 Publier des vidéos et photos</li>
+                    <li>❤️ Aimer et commenter les posts</li>
+                    <li>👥 Suivre tes camarades</li>
+                </ul>
+                <p>À bientôt sur la plateforme !</p>
+                <p style="color:#888;font-size:12px;">HGGSP Platform — Lycée Félix Ébouié</p>
+            </div>
+            `
+        );
     }
 
     // ═══════════════════════════════════════════
