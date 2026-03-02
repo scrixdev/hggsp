@@ -282,7 +282,17 @@
             outline: none;
         }
 
-        /* inputs with visible borders get accent on focus, transparent ones don't */
+        /* Prevent browser autofill white background */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px var(--surface2) inset !important;
+            -webkit-text-fill-color: #fff !important;
+            caret-color: #fff;
+        }
+
+        /* inputs focus — blue outline */
         .form-control:focus, .stg-select:focus, .epm-input:focus, .epm-textarea:focus {
             border-color: var(--accent);
         }
@@ -526,29 +536,29 @@
         .tt-mn-btn.tt-active .tt-mn-icon { transform: scale(1.15); }
         .tt-mn-icon { font-size: 1.45rem; transition: transform 0.2s; }
         .tt-mn-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; }
-        /* Big + button in the middle */
+        /* Publish button — round gradient, original design */
         .tt-mn-post {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             background: none; border: none; cursor: pointer; padding: 4px;
             -webkit-tap-highlight-color: transparent;
+            gap: 3px;
         }
         .tt-mn-post-inner {
             display: flex; align-items: center; justify-content: center;
-            width: 46px; height: 32px; border-radius: 8px;
-            background: var(--text); position: relative;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--gradient);
+            box-shadow: 0 4px 18px rgba(254,44,85,0.45);
+            transition: transform 0.18s, box-shadow 0.18s;
+            position: relative;
+            top: -8px;
         }
-        .tt-mn-post-inner::before {
-            content: '';
-            position: absolute; left: -6px; top: 0; bottom: 0;
-            width: 8px; background: var(--accent2); border-radius: 4px;
+        .tt-mn-post:active .tt-mn-post-inner {
+            transform: scale(0.92);
+            box-shadow: 0 2px 8px rgba(254,44,85,0.3);
         }
-        .tt-mn-post-inner::after {
-            content: '';
-            position: absolute; right: -6px; top: 0; bottom: 0;
-            width: 8px; background: var(--accent); border-radius: 4px;
-        }
-        .tt-mn-post-plus { font-size: 1.4rem; font-weight: 800; color: var(--bg); z-index: 1; }
+        .tt-mn-post-plus { font-size: 1.4rem; font-weight: 300; color: #fff; line-height: 1; }
+        .tt-mn-post-label { font-size: 0.6rem; font-weight: 700; color: var(--text3); font-family: 'Plus Jakarta Sans', sans-serif; margin-top: -6px; }
 
         /* ===== LEGACY SIDEBAR OVERLAY (keep for compat) ===== */
         .hggsp-overlay { display: none; }
@@ -955,8 +965,8 @@
         /* Grid of video cards — TikTok style */
         .posts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
         }
 
         /* Card — full overlay like TikTok */
@@ -1435,7 +1445,7 @@
             border-radius: 999px; padding: 5px 12px; color: var(--text);
             font-size: 0.82rem; font-family: 'Plus Jakarta Sans', sans-serif; outline: none;
         }
-        .pm-reply-input input:focus { border-color: rgba(255,255,255,0.2); }
+        .pm-reply-input input:focus { border-color: var(--accent); }
         .pm-reply-send {
             background: var(--accent); border: none; border-radius: 50%;
             width: 28px; height: 28px; color: #fff; cursor: pointer;
@@ -1570,7 +1580,7 @@
 
         /* ═══ PUBLISH PAGE — TikTok style ═══ */
         .publish-form {
-            max-width: 860px; margin: 0 auto;
+            max-width: 100%; margin: 0 auto;
             padding: 0 0 3rem;
         }
         .publish-form-header { margin-bottom: 24px; }
@@ -1714,7 +1724,8 @@
             background: transparent; border: none; outline: none;
             box-shadow: none;
             color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: .92rem; width: 100%; padding: 0; resize: none; line-height: 1.6;
+            font-size: .92rem; width: 100%; padding: 4px 0; resize: none; line-height: 1.8;
+            min-height: 32px;
         }
         .publish-field input[type="text"]:focus,
         .publish-field textarea:focus {
@@ -1913,7 +1924,7 @@
         /* Posts grid */
         .profile-posts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
             gap: 10px; margin-top: 12px;
         }
         .empty-grid-msg {
@@ -2802,70 +2813,107 @@
         .msg-new-modal {
             display: none;
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.75);
             z-index: 200;
-            align-items: center; justify-content: center;
-            backdrop-filter: blur(4px);
+            align-items: flex-end; justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        @media (min-width: 600px) {
+            .msg-new-modal { align-items: center; }
+            .msg-new-box { border-radius: 24px !important; }
         }
         .msg-new-modal.open { display: flex; }
         .msg-new-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            width: 400px;
-            max-width: 95vw;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px 24px 0 0;
+            width: 100%;
+            max-width: 460px;
             overflow: hidden;
-            animation: slideUp 0.25s cubic-bezier(.16,1,.3,1);
+            animation: slideUp 0.3s cubic-bezier(.16,1,.3,1);
+            box-shadow: 0 -8px 60px rgba(0,0,0,0.6);
         }
         .msg-new-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            font-weight: 800;
-            font-size: 0.95rem;
+            padding: 20px 20px 16px;
         }
-        .msg-new-search {
-            display: block;
-            width: calc(100% - 32px);
-            margin: 14px 16px 8px;
+        .msg-new-header span {
+            font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em;
+        }
+        .msg-new-close-btn {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: none; color: var(--text); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; transition: background 0.15s;
+        }
+        .msg-new-close-btn:hover { background: rgba(255,255,255,0.14); }
+        .msg-new-search-wrap {
+            margin: 0 16px 10px;
+            display: flex; align-items: center; gap: 10px;
             background: var(--surface2);
-            border: 1.5px solid var(--border);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 10px 14px;
-            color: var(--text);
-            font-size: 0.88rem;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            outline: none;
+            padding: 12px 18px;
+            transition: border-color 0.2s;
         }
-        .msg-new-search:focus { border-color: var(--accent); }
-        .msg-mutual-list { padding: 4px 8px 12px; max-height: 320px; overflow-y: auto; }
+        .msg-new-search-wrap:focus-within { border-color: var(--accent); }
+        .msg-new-search-wrap svg { flex-shrink: 0; opacity: 0.3; }
+        .msg-new-search {
+            background: transparent !important; border: none !important; outline: none !important;
+            box-shadow: none !important; border-radius: 0 !important;
+            padding: 0 !important; width: 100%;
+            color: var(--text); font-size: 0.9rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .msg-new-search::placeholder { color: rgba(255,255,255,0.25); }
+        .msg-mutual-list { padding: 4px 8px 20px; max-height: 340px; overflow-y: auto; }
         .msg-mutual-item {
             display: flex; align-items: center; gap: 12px;
-            padding: 11px 12px;
-            border-radius: 12px;
+            padding: 10px 10px;
+            border-radius: 14px;
             cursor: pointer;
             transition: background 0.15s;
         }
-        .msg-mutual-item:hover { background: var(--surface2); }
+        .msg-mutual-item:hover { background: rgba(255,255,255,0.05); }
         .msg-mutual-avatar {
-            width: 44px; height: 44px;
+            width: 46px; height: 46px;
             border-radius: 50%;
-            background: var(--bg);
+            background: var(--surface2);
             font-size: 1.3rem;
             display: flex; align-items: center; justify-content: center;
             overflow: hidden; flex-shrink: 0;
         }
         .msg-mutual-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .msg-mutual-name { font-weight: 700; font-size: 0.9rem; }
-        .msg-mutual-handle { font-size: 0.75rem; color: var(--text3); }
+        .msg-mutual-handle { font-size: 0.75rem; color: var(--text3); margin-top: 1px; }
         .msg-mutual-badge {
-            margin-left: auto;
-            font-size: 0.7rem;
-            background: rgba(37,244,238,0.12);
+            margin-left: auto; flex-shrink: 0;
+            font-size: 0.68rem;
+            background: rgba(37,244,238,0.1);
             color: var(--accent2);
             border-radius: 999px;
-            padding: 3px 8px;
+            padding: 3px 9px;
             font-weight: 700;
+            border: 1px solid rgba(37,244,238,0.15);
+        }
+        .msg-mutual-empty {
+            text-align: center; padding: 3rem 1.5rem;
+            color: var(--text3); font-size: 0.85rem; line-height: 1.6;
+        }
+        .msg-mutual-empty-icon {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; opacity: 0.7;
+        }
+        .msg-mutual-empty-title {
+            font-size: 0.9rem; font-weight: 700; color: var(--text2); margin-bottom: 4px;
+        }
+        .msg-mutual-empty-sub {
+            font-size: 0.78rem; color: var(--text3);
         }
 
         /* Mobile responsive */
@@ -3040,7 +3088,7 @@
             outline: none;
             transition: border-color .15s;
         }
-        .priv-select:focus { border-color: rgba(255,255,255,0.25); }
+        .priv-select:focus { border-color: var(--accent); }
         .priv-select option { background: #1a1a1a; color: #fff; }
         .priv-select-arrow {
             position: absolute; right: 16px; top: 50%;
@@ -3321,8 +3369,33 @@
         .upo-body { flex: 1; max-width: 900px; margin: 0 auto; width: 100%; padding: 2rem 1.5rem; }
 
         /* ========== SEARCH PAGE ========== */
-        #searchInput { background: var(--surface); border: 1.5px solid var(--border); }
-        #searchInput:focus { border-color: var(--accent); }
+        .search-input-wrap {
+            display: flex; align-items: center; gap: 12px;
+            background: #0e0e0e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 13px 18px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .search-input-wrap:focus-within {
+            border-color: var(--accent);
+        }
+        .search-input-wrap svg { flex-shrink: 0; opacity: 0.3; }
+        #searchInput {
+            background: transparent !important; border: none !important; outline: none !important;
+            box-shadow: none !important; border-radius: 0 !important; padding: 0 !important;
+            color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem; width: 100%;
+            -webkit-text-fill-color: var(--text);
+        }
+        #searchInput:-webkit-autofill,
+        #searchInput:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px #0e0e0e inset !important;
+            -webkit-text-fill-color: #fff !important;
+            caret-color: #fff;
+        }
+        #searchInput::placeholder { color: rgba(255,255,255,0.25); }
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 900px) {
@@ -3594,8 +3667,9 @@
         </button>
         <button class="tt-mn-post" onclick="switchTab('upload', null)">
             <div class="tt-mn-post-inner">
-                <span class="tt-mn-post-plus">＋</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
+            <span class="tt-mn-post-label">Publier</span>
         </button>
         <button class="tt-mn-btn" id="ttMnMessages" onclick="switchTab('messages', this)" data-tab="messages">
             <span class="tt-mn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
@@ -3679,10 +3753,9 @@
 
         <!-- BLOG -->
         <div id="blogTab" class="content-section">
-            <div class="page-max">
-                <div class="blog-header">
-                    <h2>Pour Toi</h2>
-                </div>
+            <div class="blog-header">
+                <h2>Pour Toi</h2>
+            </div>
                 <!-- TikTok-style top tabs -->
                 <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem;">
                     <button class="ptab active" id="feedTabForYou" onclick="setFeedTab('all',this)" style="flex:0 0 auto;">Pour Toi</button>
@@ -3691,17 +3764,16 @@
                     <button class="ptab" id="feedTabEleves" onclick="setFeedTab('eleve',this)" style="flex:0 0 auto;">Élèves</button>
                 </div>
                 <div class="posts-grid" id="postsList"></div>
-            </div>
         </div>
 
         <!-- SEARCH -->
         <div id="searchTab" class="content-section">
             <div class="page-max">
                 <div style="margin-bottom:1.5rem;">
-                    <div style="position:relative;">
-                        <input type="text" id="searchInput" placeholder="Rechercher des vidéos, hashtags, utilisateurs..." 
-                            oninput="handleSearch(event)"
-                            style="width:100%;padding:0.9rem 1rem 0.9rem 1rem;border-radius:14px;font-size:0.95rem;">
+                    <div class="search-input-wrap">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="searchInput" placeholder="Rechercher des vidéos, hashtags, utilisateurs..."
+                            oninput="handleSearch(event)">
                     </div>
                 </div>
                 <div id="searchTabs" style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;">
@@ -3933,9 +4005,14 @@
             <div class="msg-new-box">
                 <div class="msg-new-header">
                     <span>Nouveau message</span>
-                    <button onclick="closeMsgNewModal()" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer;">✕</button>
+                    <button class="msg-new-close-btn" onclick="closeMsgNewModal()">
+                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>
+                    </button>
                 </div>
-                <input type="text" class="msg-new-search" id="msgNewSearch" placeholder="Rechercher un utilisateur..." oninput="renderMutualList(this.value)">
+                <div class="msg-new-search-wrap">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="msg-new-search" id="msgNewSearch" placeholder="Rechercher un utilisateur..." oninput="renderMutualList(this.value)">
+                </div>
                 <div class="msg-mutual-list" id="msgMutualList"></div>
             </div>
         </div>
@@ -4706,11 +4783,11 @@
                     <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <label style="font-size:.8rem;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;">Nouvelle adresse email</label>
-                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="email" id="stgNewEmail" placeholder="nouvelle@adresse.fr" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="email" id="stgNewEmail" placeholder="nouvelle@adresse.fr" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.07)'">
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <label style="font-size:.8rem;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;">Mot de passe actuel</label>
-                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgEmailPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgEmailPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.07)'">
                         </div>
                         <div style="background:var(--surface2);border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;">
                             <span style="flex-shrink:0;margin-top:2px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
@@ -4738,15 +4815,15 @@
                     <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <label style="font-size:.8rem;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;">Mot de passe actuel</label>
-                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgCurrentPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgCurrentPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.07)'">
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <label style="font-size:.8rem;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;">Nouveau mot de passe</label>
-                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgNewPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgNewPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.07)'">
                         </div>
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <label style="font-size:.8rem;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;">Confirmer le nouveau mot de passe</label>
-                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgConfirmPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='rgba(254,44,85,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                            <input class="stg-select" style="border-radius:14px;padding:16px 18px;min-width:unset;width:100%;font-size:1rem;height:56px;background:var(--surface2);border:1.5px solid var(--border);transition:border-color .2s;color:var(--text);" type="password" id="stgConfirmPassword" placeholder="••••••••••••" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.07)'">
                         </div>
                         <div style="text-align:right;">
                             <button onclick="sendPasswordReset()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:.82rem;font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;transition:color .2s;" onmouseover="this.style.color='rgba(254,44,85,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">
@@ -6917,7 +6994,7 @@
             return;
         }
         c.innerHTML = `
-            <div class="page-max">
+            <div style="width:100%;padding:2rem 2.5rem;box-sizing:border-box;">
                 <div class="publish-form">
                     <div class="publish-form-header">
                         <h2>Nouveau post</h2>
@@ -7587,10 +7664,12 @@
 
             if (scored.length === 0) {
                 resultsEl.innerHTML = `
-                    <div style="text-align:center;padding:3rem 0;color:var(--text2);">
-                        <div style="margin-bottom:0.75rem;opacity:.35;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-                        <div style="font-weight:700;margin-bottom:0.3rem;">Aucune vidéo trouvée</div>
-                        <div style="font-size:0.82rem;color:var(--text3);">Essaie un autre mot-clé ou hashtag</div>
+                    <div style="text-align:center;padding:4rem 2rem;">
+                        <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </div>
+                        <div style="font-weight:700;font-size:0.95rem;color:rgba(255,255,255,0.7);margin-bottom:6px;">Aucune vidéo trouvée</div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.3);">Essaie un autre mot-clé ou hashtag</div>
                     </div>`;
                 return;
             }
@@ -7670,10 +7749,12 @@
 
             if (scored.length === 0) {
                 resultsEl.innerHTML = `
-                    <div style="text-align:center;padding:3rem 0;color:var(--text2);">
-                        <div style="font-size:2.5rem;margin-bottom:0.75rem;">👤</div>
-                        <div style="font-weight:700;margin-bottom:0.3rem;">Aucun utilisateur trouvé</div>
-                        <div style="font-size:0.82rem;color:var(--text3);">Vérifie l'orthographe du nom ou du pseudo</div>
+                    <div style="text-align:center;padding:4rem 2rem;">
+                        <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div style="font-weight:700;font-size:0.95rem;color:rgba(255,255,255,0.7);margin-bottom:6px;">Aucun utilisateur trouvé</div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.3);">Vérifie l'orthographe du nom ou du pseudo</div>
                     </div>`;
                 return;
             }
@@ -8446,7 +8527,17 @@
             u.username.toLowerCase().includes(filter.toLowerCase())
         );
         if (filtered.length === 0) {
-            list.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text3);font-size:0.85rem;">${filter ? 'Aucun résultat' : "Tu n'as pas encore d'abonnements mutuels"}</div>`;
+            list.innerHTML = filter
+                ? `<div class="msg-mutual-empty">
+                    <div class="msg-mutual-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                    <div class="msg-mutual-empty-title">Aucun résultat pour « ${filter} »</div>
+                    <div class="msg-mutual-empty-sub">Vérifie l'orthographe du pseudo</div>
+                  </div>`
+                : `<div class="msg-mutual-empty">
+                    <div class="msg-mutual-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+                    <div class="msg-mutual-empty-title">Aucun abonnement mutuel</div>
+                    <div class="msg-mutual-empty-sub">Abonne-toi à quelqu'un pour pouvoir<br>lui envoyer un message</div>
+                  </div>`;
             return;
         }
         list.innerHTML = filtered.map(u => {
