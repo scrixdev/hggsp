@@ -1559,9 +1559,9 @@
 
         /* Comment input */
         .post-modal-input-area {
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-top: 1px solid var(--border);
-            display: flex; align-items: center; gap: 8px;
+            display: flex; align-items: flex-end; gap: 10px;
             background: var(--surface);
             flex-shrink: 0;
         }
@@ -1571,27 +1571,73 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 1rem; overflow: hidden;
         }
+        .pm-input-pill {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface2);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 10px 10px 8px 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .pm-input-pill:focus-within {
+            border-color: rgba(254,44,85,0.35);
+            box-shadow: 0 0 0 3px rgba(254,44,85,0.07);
+        }
         .post-modal-comment-input {
-            flex: 1; background: transparent; border: none;
-            color: var(--text2); font-size: 0.88rem;
+            width: 100%;
+            background: transparent; border: none;
+            color: var(--text); font-size: 0.88rem;
             font-family: 'Plus Jakarta Sans', sans-serif; outline: none;
+            line-height: 1.5;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 18px;
+            max-height: 160px;
+            padding: 0;
         }
         .post-modal-comment-input::placeholder { color: var(--text3); }
-        .pm-input-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-        .pm-input-btn { 
-            background: none; border: none; cursor: pointer;
-            color: var(--text3); font-size: 1.1rem; padding: 4px;
-            transition: color 0.2s;
+        .pm-bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 6px;
         }
-        .pm-input-btn:hover { color: var(--text); }
+        }
+        .post-modal-comment-input::placeholder { color: var(--text3); }
+        .pm-input-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+
+        /* @ button */
+        .pm-input-btn {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            cursor: pointer;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, color 0.2s, transform 0.15s;
+            flex-shrink: 0;
+        }
+        .pm-input-btn:hover {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            transform: scale(1.08);
+        }
         .pm-send-btn {
-            width: 32px; height: 32px; border-radius: 50%;
+            width: 30px; height: 30px; border-radius: 50%;
             background: var(--accent); border: none;
             color: #fff; font-size: 1rem; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
+            transition: transform 0.18s, box-shadow 0.18s;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(254,44,85,0.35);
         }
-        .pm-send-btn:hover { transform: scale(1.1); }
+        .pm-send-btn:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(254,44,85,0.5); }
 
         /* Role badges */
         .badge-prof {
@@ -1646,13 +1692,54 @@
         .pm-reply-input input:focus { border-color: var(--accent); }
         .pm-reply-send {
             background: var(--accent); border: none; border-radius: 50%;
-            width: 28px; height: 28px; color: #fff; cursor: pointer;
-            font-size: 0.8rem; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+            width: 30px; height: 30px; color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 2px 10px rgba(254,44,85,0.35);
+            transition: transform 0.18s, box-shadow 0.18s;
         }
-        .pm-replies-list { margin-top: 8px; padding-left: 10px; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-        .pm-reply-item { display: flex; gap: 8px; align-items: flex-start; }
-        .pm-reply-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; overflow: hidden; }
+        .pm-reply-send:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(254,44,85,0.5); }
+        .pm-replies-list { margin-top: 4px; padding-left: 36px; display: flex; flex-direction: column; gap: 0; }
+        .pm-reply-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
+        .pm-reply-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; overflow: hidden; }
+
+        /* Comment 3-dot menu */
+        .pm-comment { position: relative; }
+        .pm-comment-dots {
+            display: inline-flex;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .pm-comment:hover .pm-comment-dots {
+            opacity: 1; pointer-events: auto;
+        }
+        .pm-reply-item:hover #rdots-btn-0,
+        .pm-reply-item:hover [id^="rdots-btn-"] { opacity: 1 !important; pointer-events: auto !important; }
+        .pm-rdots-wrap:hover [id^="rdots-btn-"] { opacity: 1 !important; }
+        .pm-comment-dots-btn {
+            background: rgba(255,255,255,0.08); border: none; border-radius: 50%;
+            width: 26px; height: 26px; cursor: pointer; color: rgba(255,255,255,0.55);
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .pm-comment-dots-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .pm-comment-dots-menu {
+            display: none; position: absolute; top: 30px; right: 0;
+            background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 4px; z-index: 50;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            min-width: 120px; animation: emojiPickerIn 0.15s ease both;
+        }
+        .pm-comment-dots-menu.open { display: block; }
+        .pm-comment-dots-menu button {
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: 7px 12px; border-radius: 7px; text-align: left;
+            font-size: 0.82rem; font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #fe2c55; display: flex; align-items: center; gap: 7px;
+            transition: background 0.1s;
+        }
+        .pm-comment-dots-menu button:hover { background: rgba(254,44,85,0.1); }
 
         /* Legacy (keep for compat) */
         .post-item { display: none; }
@@ -3000,29 +3087,43 @@
         .msg-emoji-picker {
             position: absolute;
             bottom: 72px; right: 20px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 12px;
+            background: rgba(20,20,24,0.96);
+            backdrop-filter: blur(24px) saturate(1.6);
+            -webkit-backdrop-filter: blur(24px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 20px;
+            padding: 14px;
             z-index: 50;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 0.5px rgba(255,255,255,0.04) inset;
             width: 300px;
+            animation: emojiPickerIn 0.2s cubic-bezier(.34,1.42,.64,1) both;
+        }
+        @keyframes emojiPickerIn {
+            from { opacity:0; transform: scale(0.88) translateY(10px); }
+            to   { opacity:1; transform: scale(1)    translateY(0);     }
         }
         .msg-emoji-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
+            gap: 2px;
         }
         .msg-emoji-grid span {
-            font-size: 1.3rem;
+            font-size: 1.35rem;
             text-align: center;
             cursor: pointer;
-            border-radius: 8px;
-            padding: 4px;
-            transition: background 0.1s;
+            border-radius: 10px;
+            padding: 5px 3px;
+            transition: background 0.15s, transform 0.1s;
             user-select: none;
+            display: flex; align-items: center; justify-content: center;
         }
-        .msg-emoji-grid span:hover { background: var(--surface2); }
+        .msg-emoji-grid span:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.25);
+        }
+        .msg-emoji-grid::-webkit-scrollbar,
+        #pmEmojiGrid::-webkit-scrollbar { display: none; }
+        .msg-emoji-grid, #pmEmojiGrid { scrollbar-width: none; -ms-overflow-style: none; }
 
         /* New message modal */
         .msg-new-modal {
@@ -4323,23 +4424,24 @@
                     <div class="post-modal-comments" id="pmComments"></div>
                     <div id="pmCreatorVids" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;display:none;"></div>
 
-                    <div class="post-modal-input-area">
-                        <div class="post-modal-user-avatar" id="pmUserAvatar">👤</div>
-                        <div style="flex:1;position:relative;">
-                            <input class="post-modal-comment-input" id="pmCommentInput" placeholder="Ajouter un commentaire..." onkeydown="handleCommentKey(event)" oninput="handleMentionInput(event)" autocomplete="off">
-                            <!-- @mention dropdown -->
-                            <div id="mentionDropdown" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#222;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;z-index:10;max-height:180px;overflow-y:auto;"></div>
-                            <!-- Emoji picker for comments -->
-                            <div id="pmEmojiPicker" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:280px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:10px;z-index:20;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
-                                <div id="pmEmojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:180px;overflow-y:auto;"></div>
+                    <div class="post-modal-input-area" id="pmInputArea">
+                        <div class="post-modal-user-avatar" id="pmUserAvatar" style="align-self:flex-end;margin-bottom:6px;">👤</div>
+                        <div class="pm-input-pill" id="pmInputPill" style="position:relative;">
+                            <textarea class="post-modal-comment-input" id="pmCommentInput" placeholder="Ajouter un commentaire..." onkeydown="handleCommentKey(event)" oninput="handleMentionInput(event);pmAutoResize(this);pmUpdateCharCount(this)" autocomplete="off" maxlength="2200"></textarea>
+                            <div class="pm-bottom-bar">
+                                <span id="pmCharCount" style="font-size:0.71rem;color:rgba(255,255,255,0.28);font-weight:600;">0/2200</span>
+                                <div style="display:flex;align-items:center;gap:5px;">
+                                    <button class="pm-input-btn" onclick="insertMention()" title="@" style="font-size:0.78rem;font-weight:800;">@</button>
+                                    <button class="pm-input-btn" onclick="togglePmEmoji()" title="Emoji"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+                                    <button class="pm-send-btn" onclick="submitModalComment()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="pm-input-actions">
-                            <button class="pm-input-btn" onclick="insertMention()" title="Mentionner">@</button>
-                            <button class="pm-input-btn" onclick="togglePmEmoji()" title="Emoji">🙂</button>
-                            <button class="pm-send-btn" onclick="submitModalComment()">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                            </button>
+                            <!-- @mention dropdown -->
+                            <div id="mentionDropdown" style="display:none;position:absolute;bottom:calc(100% + 10px);left:0;right:0;background:#222;border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;z-index:10;max-height:180px;overflow-y:auto;"></div>
+                            <!-- Emoji picker -->
+                            <div id="pmEmojiPicker" style="display:none;position:absolute;bottom:calc(100% + 12px);right:-8px;width:300px;background:rgba(20,20,24,0.97);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:14px;z-index:20;box-shadow:0 24px 60px rgba(0,0,0,0.7);">
+                                <div style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Emojis</div><div id="pmEmojiGrid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:200px;overflow-y:auto;scrollbar-width:none;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5943,6 +6045,7 @@
             }
         }
     }
+    window.selectRole = selectRole;
 
     async function handleLogin() {
         const displayName = document.getElementById('authDisplayName').value.trim();
@@ -6936,14 +7039,65 @@
                 cv.innerHTML = '<div style="color:var(--text3);font-size:0.88rem;text-align:center;padding:2rem;">Aucune autre publication</div>';
                 return;
             }
+            // Inject creator tile styles once
+            if (!document.getElementById('creatorTileStyle')) {
+                const s = document.createElement('style');
+                s.id = 'creatorTileStyle';
+                s.textContent = `
+                    .creator-tile {
+                        aspect-ratio: 9/16;
+                        background: var(--surface2);
+                        border-radius: 8px;
+                        overflow: hidden;
+                        cursor: pointer;
+                        position: relative;
+                        transition: transform 0.22s cubic-bezier(.34,1.42,.64,1), box-shadow 0.22s ease;
+                        will-change: transform;
+                    }
+                    .creator-tile:hover {
+                        transform: scale(1.045);
+                        box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+                        z-index: 2;
+                    }
+                    .creator-tile:hover .creator-tile-overlay {
+                        opacity: 1;
+                    }
+                    .creator-tile-overlay {
+                        position: absolute;
+                        inset: 0;
+                        background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%);
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                        pointer-events: none;
+                    }
+                    .creator-tile-views {
+                        position: absolute;
+                        bottom: 10px;
+                        left: 7px;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                        color: #fff;
+                        font-size: 0.73rem;
+                        font-weight: 700;
+                        text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+                        letter-spacing: 0.01em;
+                    }
+                `;
+                document.head.appendChild(s);
+            }
             cv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">` +
                 authorPosts.map(p => {
                     const thumb = p.videoSrc
                         ? `<video src="${p.videoSrc}" style="width:100%;height:100%;object-fit:cover;" muted></video>`
                         : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">${p.video || '📄'}</div>`;
-                    return `<div onclick="openPostModal(${p.id})" style="aspect-ratio:9/16;background:var(--surface2);border-radius:8px;overflow:hidden;cursor:pointer;position:relative;">
+                    return `<div onclick="openPostModal(${p.id})" class="creator-tile">
                         ${thumb}
-                        <div style="position:absolute;bottom:4px;left:4px;display:flex;align-items:center;gap:3px;color:#fff;font-size:0.72rem;font-weight:700;text-shadow:0 1px 4px #000;">❤️ ${p.likes||0}</div>
+                        <div class="creator-tile-overlay"></div>
+                        <div class="creator-tile-views">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="white" style="opacity:0.9"><polygon points="5,3 19,12 5,21"/></svg>
+                            ${formatNum(p.views||0)}
+                        </div>
                     </div>`;
                 }).join('') + `</div>`;
         }
@@ -7011,33 +7165,84 @@
                     <span class="pm-comment-like-count">${c.likes > 0 ? formatNum(c.likes) : ''}</span>
                 </div>`;
 
-            // Replies HTML
-            const repliesHTML = (c.replies_list || []).map(r => {
+            // Replies HTML TikTok style
+            const replies = c.replies_list || [];
+            const hasReplies = replies.length > 0;
+            const nbReplies = replies.length;
+            const SHOW_FIRST = 1; // show 1 by default, rest hidden
+            const repliesHTML = replies.map((r, ri) => {
                 const rav = r.avatarImg
                     ? `<img src="${r.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-                    : `<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.5)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>`;
+                    : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
                 const rIsCreator = r.isCreator || (currentUser && String(r.authorId) === String(post.authorId));
                 const rCreatorTag = rIsCreator ? `<span class="pm-creator-tag">· Créateur(trice)</span>` : '';
                 const rRoleB = !rIsCreator && r.role === 'prof' ? '<span class="badge-prof" style="font-size:0.52rem;">PROF</span>' : '';
-                return `<div class="pm-reply-item">
+                const isMyReply = currentUser && String(r.authorId) === String(currentUser.id);
+                const rDots = isMyReply ? `
+                    <span style="position:relative;display:inline-flex;" class="pm-rdots-wrap">
+                        <button class="pm-comment-dots-btn" onclick="toggleReplyMenu(${i},${ri},event)" style="width:24px;height:24px;opacity:0;transition:opacity 0.15s;" id="rdots-btn-${i}-${ri}">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                        </button>
+                        <div class="pm-comment-dots-menu" id="rmenu-${i}-${ri}" style="right:0;top:28px;min-width:130px;">
+                            <button onclick="deleteReply(${i},${ri})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:#fe2c55;" onmouseover="this.style.background='rgba(254,44,85,0.1)'" onmouseout="this.style.background='none'">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Supprimer
+                            </button>
+                        </div>
+                    </span>` : '';
+                return `<div class="pm-reply-item reply-extra-${i}" style="display:none;">
                     <div class="pm-reply-avatar">${rav}</div>
                     <div style="flex:1;min-width:0;">
-                        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                            <span style="font-size:0.79rem;font-weight:700;">${r.author}</span>
+                        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                            <span style="font-size:0.82rem;font-weight:700;">${r.author}</span>
                             ${rCreatorTag}${rRoleB}
                         </div>
-                        <div style="font-size:0.85rem;color:var(--text);margin-top:2px;line-height:1.4;">${highlightMentions(r.text)}</div>
-                        <div style="font-size:0.72rem;color:var(--text3);margin-top:4px;">${r.time || 'à l\'instant'} · <button class="pm-comment-reply-btn" onclick="toggleReplyInput(${i})">Répondre</button></div>
+                        <div style="font-size:0.88rem;color:var(--text);margin-top:3px;line-height:1.45;">${highlightMentions(r.text)}</div>
+                        <div style="font-size:0.73rem;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:12px;">
+                            <span>${r.time || "à l'instant"}</span>
+                            <button class="pm-comment-reply-btn" onclick="toggleReplyInput(${i})">Répondre</button>
+                            ${rDots}
+                        </div>
                     </div>
-                    <div class="pm-comment-like-right" style="padding-top:2px;">
-                        <span class="pm-comment-like"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
-                        <span class="pm-comment-like-count">${r.likes > 0 ? r.likes : ''}</span>
+                    <div class="pm-comment-like-right" style="min-width:28px;">
+                        <span class="pm-comment-like${r.likedByMe ? ' liked' : ''}" onclick="likeReply(${i},${ri})" style="cursor:pointer;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="${r.likedByMe ? '#fe2c55' : 'none'}" stroke="${r.likedByMe ? '#fe2c55' : 'currentColor'}" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </span>
+                        <span class="pm-comment-like-count">${r.likes > 0 ? formatNum(r.likes) : ''}</span>
                     </div>
                 </div>`;
             }).join('');
 
-            const hasReplies = c.replies_list && c.replies_list.length > 0;
-            const nbReplies = hasReplies ? c.replies_list.length : 0;
+            const showMoreBtn = hasReplies
+                ? `<button id="show-more-${i}" class="pm-show-replies" onclick="toggleExtraReplies(${i})" style="border:none;background:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Voir ${nbReplies} réponse${nbReplies > 1 ? 's' : ''} ∨</button>`
+                : '';
+
+            const isMyComment = currentUser && String(c.authorId) === String(currentUser.id);
+            const canEdit = isMyComment && c.date && (Date.now() - c.date < 30000);
+            const editBtn = canEdit ? `<button onclick="editComment(${i})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;text-align:left;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:rgba(255,255,255,0.7);" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>` : '';
+
+            // Like content built cleanly
+            const likeContent = c.likedByMe
+                ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fe2c55" stroke="#fe2c55" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`
+                : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`;
+            const likeCount = c.likes > 0 ? formatNum(c.likes) : '';
+
+            const rightCol = `
+                <div class="pm-comment-like-right" style="position:relative;">
+                    ${isMyComment ? `
+                    <button class="pm-comment-dots-btn" onclick="toggleCommentMenu(${i},event)" style="margin-bottom:6px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                    </button>
+                    <div class="pm-comment-dots-menu" id="cmenu-${i}" style="right:0;top:34px;">
+                        ${editBtn}
+                        <button onclick="deleteComment(${i})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:#fe2c55;" onmouseover="this.style.background='rgba(254,44,85,0.1)'" onmouseout="this.style.background='none'">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Supprimer
+                        </button>
+                    </div>` : ''}
+                    <span class="pm-comment-like${c.likedByMe ? ' liked' : ''}" id="clike-${i}" onclick="likeComment(this,${i})" style="cursor:pointer;display:flex;align-items:center;">
+                        ${likeContent}
+                    </span>
+                    <span class="pm-comment-like-count">${likeCount}</span>
+                </div>`;
 
             div.innerHTML = `
                 <div class="pm-comment-avatar">${av}</div>
@@ -7051,18 +7256,158 @@
                         <span>${dateStr}</span>
                         <button class="pm-comment-reply-btn" onclick="toggleReplyInput(${i})">Répondre</button>
                     </div>
-                    ${hasReplies ? `<div class="pm-show-replies" onclick="toggleRepliesList(${i})" id="show-replies-${i}">Afficher ${nbReplies} réponse${nbReplies > 1 ? 's' : ''} ∨</div>` : ''}
                     <div class="pm-reply-input" id="reply-input-${i}" style="display:none;">
                         <input type="text" placeholder="Ta réponse..." id="reply-text-${i}" onkeydown="if(event.key==='Enter')submitReply(${i})">
-                        <button class="pm-reply-send" onclick="submitReply(${i})">↑</button>
+                        <button class="pm-reply-send" onclick="submitReply(${i})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></button>
                     </div>
-                    ${hasReplies ? `<div class="pm-replies-list" id="replies-list-${i}" style="display:none;">${repliesHTML}</div>` : ''}
+                    ${hasReplies ? `<div class="pm-replies-list" id="replies-list-${i}">${showMoreBtn}${repliesHTML}</div>` : ''}
                 </div>
-                ${likeOnRight}
+                ${rightCol}
             `;
             area.appendChild(div);
         });
     }
+
+    function toggleExtraReplies(ci) {
+        const extras = document.querySelectorAll(`.reply-extra-${ci}`);
+        const btn = document.getElementById(`show-more-${ci}`);
+        const isHidden = [...extras].some(el => el.style.display === 'none');
+        if (isHidden) {
+            extras.forEach(el => el.style.display = 'flex');
+            if (btn) btn.textContent = '— Masquer ∧';
+        } else {
+            extras.forEach(el => el.style.display = 'none');
+            const n = extras.length;
+            if (btn) btn.textContent = `Voir ${n} réponse${n > 1 ? 's' : ''} ∨`;
+        }
+    }
+
+    function likeReply(ci, ri) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        const r = post.commentList[ci]?.replies_list?.[ri];
+        if (!r) return;
+        r.likedByMe = !r.likedByMe;
+        r.likes = (r.likes || 0) + (r.likedByMe ? 1 : -1);
+        if (r.likes < 0) r.likes = 0;
+        // Update DOM directly — no re-render so replies stay open
+        const replyEl = document.querySelectorAll(`.reply-extra-${ci}`)[ri] ||
+                        document.querySelectorAll(`#replies-list-${ci} .pm-reply-item`)[ri];
+        if (!replyEl) return;
+        const likeSpan = replyEl.querySelector('.pm-comment-like');
+        const countSpan = replyEl.querySelector('.pm-comment-like-count');
+        if (likeSpan) {
+            likeSpan.style.color = r.likedByMe ? '#fe2c55' : '';
+            const svg = likeSpan.querySelector('svg');
+            if (svg) svg.setAttribute('fill', r.likedByMe ? '#fe2c55' : 'none');
+        }
+        if (countSpan) countSpan.textContent = r.likes > 0 ? r.likes : '';
+    }
+
+    function toggleReplyMenu(ci, ri, e) {
+        e.stopPropagation();
+        const menu = document.getElementById(`rmenu-${ci}-${ri}`);
+        if (!menu) return;
+        const isOpen = menu.classList.contains('open');
+        document.querySelectorAll('.pm-comment-dots-menu.open').forEach(m => m.classList.remove('open'));
+        if (!isOpen) menu.classList.add('open');
+    }
+
+    function deleteReply(ci, ri) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        post.commentList[ci].replies_list.splice(ri, 1);
+        // Remove DOM element directly — no re-render so other replies stay visible
+        const repliesList = document.getElementById(`replies-list-${ci}`);
+        if (repliesList) {
+            const items = repliesList.querySelectorAll('.pm-reply-item');
+            if (items[ri]) items[ri].remove();
+            // Update show-more button count
+            const remaining = post.commentList[ci].replies_list.length;
+            const btn = document.getElementById(`show-more-${ci}`);
+            if (btn && remaining === 0) {
+                repliesList.remove();
+            } else if (btn) {
+                btn.textContent = `Voir ${remaining} réponse${remaining > 1 ? 's' : ''} ∨`;
+            }
+        }
+        showToast('Réponse supprimée', 'success');
+    }
+
+    function editComment(idx) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        const c = post.commentList[idx];
+        if (!c) return;
+        const elapsed = Date.now() - c.date;
+        if (elapsed > 30000) { showToast('Plus possible de modifier (30s écoulées)', 'error'); return; }
+        // Close menu
+        document.querySelectorAll('.pm-comment-dots-menu.open').forEach(m => m.classList.remove('open'));
+        // Replace text with inline input
+        const textEl = document.getElementById(`pm-comment-${idx}`)?.querySelector('.pm-comment-text');
+        if (!textEl) return;
+        const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
+        textEl.innerHTML = `<div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+            <input id="edit-input-${idx}" value="${c.text.replace(/"/g,'&quot;')}" style="flex:1;background:var(--surface);border:1px solid rgba(254,44,85,0.4);border-radius:8px;padding:5px 10px;color:var(--text);font-size:0.88rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+            <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);white-space:nowrap;" id="edit-countdown-${idx}">${remaining}s</span>
+            <button onclick="saveCommentEdit(${idx})" style="background:var(--accent);border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">OK</button>
+            <button onclick="renderModalComments(posts.find(p=>p.id===currentModalPostId))" style="background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:5px 10px;color:var(--text2);font-size:0.8rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">✕</button>
+        </div>`;
+        document.getElementById(`edit-input-${idx}`)?.focus();
+        // Countdown
+        const iv = setInterval(() => {
+            const left = Math.max(0, Math.ceil((30000 - (Date.now() - c.date)) / 1000));
+            const el = document.getElementById(`edit-countdown-${idx}`);
+            if (el) el.textContent = left + 's';
+            if (left <= 0) {
+                clearInterval(iv);
+                renderModalComments(post);
+            }
+        }, 1000);
+    }
+
+    function saveCommentEdit(idx) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        const c = post.commentList[idx];
+        if (!c) return;
+        if (Date.now() - c.date > 30000) { showToast('Délai dépassé', 'error'); return; }
+        const inp = document.getElementById(`edit-input-${idx}`);
+        if (!inp) return;
+        const newText = inp.value.trim();
+        if (!newText) return;
+        c.text = newText;
+        c.edited = true;
+        renderModalComments(post);
+        showToast('Commentaire modifié', 'success');
+    }
+
+    function toggleCommentMenu(idx, e) {
+        e.stopPropagation();
+        const menu = document.getElementById(`cmenu-${idx}`);
+        if (!menu) return;
+        const isOpen = menu.classList.contains('open');
+        // Close all menus
+        document.querySelectorAll('.pm-comment-dots-menu.open').forEach(m => m.classList.remove('open'));
+        if (!isOpen) menu.classList.add('open');
+    }
+
+    function deleteComment(idx) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        post.commentList.splice(idx, 1);
+        post.comments = Math.max(0, post.comments - 1);
+        document.getElementById('pmCommentCount').textContent = post.comments;
+        document.getElementById('pmTabCommentCount').textContent = post.commentList.length;
+        renderModalComments(post);
+        renderPosts();
+        showToast('Commentaire supprimé', 'success');
+    }
+
+    // Close comment menus on outside click
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.pm-comment-dots-menu.open').forEach(m => m.classList.remove('open'));
+    });
 
     function formatCommentDate(ts) {
         if (!ts) return '';
@@ -7138,8 +7483,8 @@
         if (!picker) return;
         if (picker.style.display === 'none') {
             const grid = document.getElementById('pmEmojiGrid');
-            grid.innerHTML = MSG_EMOJIS.map(e => `<span onclick="insertPmEmoji('${e}')" style="cursor:pointer;font-size:1.3rem;text-align:center;padding:3px;border-radius:6px;transition:background 0.1s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">${e}</span>`).join('');
-            picker.style.display = 'block';
+            grid.innerHTML = MSG_EMOJIS.map(e => `<span onclick="insertPmEmoji('${e}')" style="cursor:pointer;font-size:1.35rem;text-align:center;padding:5px 3px;border-radius:10px;transition:background 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.transform='scale(1.25)'" onmouseout="this.style.background='none';this.style.transform='scale(1)'">${e}</span>`).join('');
+            picker.style.display = 'block'; picker.style.animation = 'none'; picker.offsetHeight; picker.style.animation = 'emojiPickerIn 0.2s cubic-bezier(.34,1.42,.64,1) both';
         } else {
             picker.style.display = 'none';
         }
@@ -7169,6 +7514,52 @@
         if (inp) inp.focus();
     }
 
+    function pmAutoResize(el) {
+        el.style.height = '18px';
+        el.style.height = el.scrollHeight + 'px';
+        if (el.scrollHeight > 160) {
+            el.style.height = '160px';
+            el.style.overflowY = 'auto';
+        } else {
+            el.style.overflowY = 'hidden';
+        }
+    }
+
+    function pmUpdateCharCount(el) {
+        const cc = document.getElementById('pmCharCount');
+        if (!cc) return;
+        const len = el.value.length;
+        cc.textContent = len + '/2200';
+        cc.style.color = len > 2000 ? 'rgba(254,44,85,0.8)' : 'rgba(255,255,255,0.25)';
+    }
+
+    function pmExpandInput() {
+        const pill = document.getElementById('pmInputPill');
+        const cc = document.getElementById('pmCharCount');
+        if (pill) {
+            pill.style.flexDirection = 'column';
+            pill.style.alignItems = 'stretch';
+            pill.style.padding = '10px 10px 28px 14px';
+        }
+        const ta = document.getElementById('pmCommentInput');
+        if (ta) { ta.style.height = '60px'; ta.style.minHeight = '60px'; }
+        if (cc) cc.style.display = 'block';
+    }
+
+    function pmCollapseInput() {
+        const ta = document.getElementById('pmCommentInput');
+        if (ta && ta.value.trim() !== '') return; // garde ouvert si du texte
+        const pill = document.getElementById('pmInputPill');
+        const cc = document.getElementById('pmCharCount');
+        if (pill) {
+            pill.style.flexDirection = 'row';
+            pill.style.alignItems = 'center';
+            pill.style.padding = '10px 10px 10px 14px';
+        }
+        if (ta) { ta.style.height = '22px'; ta.style.minHeight = '22px'; }
+        if (cc) cc.style.display = 'none';
+    }
+
     function submitModalComment() {
         const inp = document.getElementById('pmCommentInput');
         const text = inp.value.trim();
@@ -7189,6 +7580,10 @@
         });
         post.comments++;
         inp.value = '';
+        inp.style.height = '18px';
+        inp.style.overflowY = 'hidden';
+        const cc = document.getElementById('pmCharCount');
+        if (cc) cc.textContent = '0/2200';
         document.getElementById('pmCommentCount').textContent = post.comments;
         document.getElementById('pmTabCommentCount').textContent = post.commentList.length;
         renderModalComments(post);
