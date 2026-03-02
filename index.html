@@ -8215,7 +8215,11 @@
 
         let postsToShow = [];
         if (currentProfileTab === 'videos') {
-            postsToShow = userProfile.posts;
+            // Sync userProfile.posts with global posts array to get latest data (photos, videoSrc, etc.)
+            postsToShow = (userProfile.posts || []).map(up => {
+                const fresh = posts.find(p => p.id === up.id);
+                return fresh || up;
+            });
         } else if (currentProfileTab === 'liked') {
             postsToShow = userProfile.likedPosts || [];
         } else if (currentProfileTab === 'reposts') {
@@ -8251,9 +8255,12 @@
                 <div class="tile-bg">
                     ${p.videoSrc
                         ? `<video src="${p.videoSrc}" class="tile-video-cover" muted playsinline preload="metadata"></video>`
-                        : `<span style="font-size:2.5rem">${p.video || '📄'}</span>`
+                        : (p.photos && p.photos.length > 0)
+                            ? `<img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover;">`
+                            : `<span style="font-size:2.5rem">${p.video || '📄'}</span>`
                     }
                 </div>
+                ${(p.photos && p.photos.length > 1) ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);border-radius:4px;padding:2px 5px;font-size:0.65rem;color:#fff;">📷 ${p.photos.length}</div>` : ''}
                 <div class="tile-overlay">
                     <span class="tile-likes">▷ ${formatNum(p.views || 0)}</span>
                 </div>
@@ -8787,9 +8794,12 @@
                 <div class="tile-bg">
                     ${post.videoSrc
                         ? `<video src="${post.videoSrc}" class="tile-video-cover" muted playsinline preload="metadata"></video>`
-                        : `<span style="font-size:3.5rem;line-height:1;">${post.video || '📄'}</span>`
+                        : (post.photos && post.photos.length > 0)
+                            ? `<img src="${post.photos[0]}" style="width:100%;height:100%;object-fit:cover;">`
+                            : `<span style="font-size:3.5rem;line-height:1;">${post.video || '📄'}</span>`
                     }
                 </div>
+                ${(post.photos && post.photos.length > 1) ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);border-radius:4px;padding:2px 5px;font-size:0.65rem;color:#fff;">📷 ${post.photos.length}</div>` : ''}
                 <div class="tile-overlay">
                     <span class="tile-likes">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
