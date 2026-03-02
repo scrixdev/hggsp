@@ -1473,7 +1473,7 @@
         .post-modal-actions {
             padding: 12px 20px;
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 20px;
+            display: flex; align-items: center; gap: 32px;
         }
         .post-modal-act {
             display: flex; align-items: center; gap: 6px;
@@ -1579,7 +1579,7 @@
             background: var(--surface2);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 18px;
-            padding: 10px 10px 8px 14px;
+            padding: 6px 10px 6px 14px;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         .pm-input-pill:focus-within {
@@ -1594,7 +1594,7 @@
             line-height: 1.5;
             resize: none;
             overflow-y: hidden;
-            min-height: 18px;
+            min-height: 26px;
             max-height: 160px;
             padding: 0;
         }
@@ -4368,21 +4368,7 @@
                             </span>
                             <span id="pmRepostCount">0</span>
                         </button>
-                        <!-- Share icons row -->
-                        <div style="display:flex;gap:6px;margin-left:auto;align-items:center;">
-                            <button class="pm-share-btn" title="Intégrer" onclick="showToast('Fonctionnalité bientôt disponible','info')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                            </button>
-                            <button class="pm-share-btn" title="WhatsApp" onclick="showToast('Lien copié','success');copyLink()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.97 0C5.36 0 0 5.36 0 11.97c0 2.1.55 4.07 1.5 5.77L0 24l6.44-1.68A11.93 11.93 0 0011.97 24C18.58 24 24 18.64 24 11.97 24 5.36 18.58 0 11.97 0zm0 21.82c-1.82 0-3.53-.49-5.01-1.34l-.36-.21-3.72.97.99-3.63-.23-.37a9.85 9.85 0 01-1.52-5.24c0-5.44 4.43-9.87 9.87-9.87 2.64 0 5.12 1.03 6.99 2.9a9.85 9.85 0 012.9 6.99c-.02 5.44-4.45 9.87-9.89 9.87z"/></svg>
-                            </button>
-                            <button class="pm-share-btn" title="Facebook" onclick="showToast('Lien copié','success');copyLink()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                            </button>
-                            <button class="pm-share-btn" title="Partager" onclick="copyLink()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                            </button>
-                        </div>
+
                     </div>
 
                     <div class="post-modal-link">
@@ -5889,6 +5875,18 @@
         warning: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 20h20L12 2z" fill="#ffaa00"/><line x1="12" y1="10" x2="12" y2="15" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="18" r="1.2" fill="#fff"/></svg>`,
     };
     const _toastBtnLabels = { success: 'OK !', error: 'Fermer', info: 'OK', warning: 'OK' };
+    function formatTimestamp(date) {
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return "à l'instant";
+        if (diff < 3600) return `il y a ${Math.floor(diff/60)} min`;
+        if (diff < 86400) return `il y a ${Math.floor(diff/3600)} h`;
+        const day = date.getDate().toString().padStart(2,'0');
+        const month = (date.getMonth()+1).toString().padStart(2,'0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
     function showToast(msg, type = 'info') {
         const container = document.getElementById('toastContainer');
         if (!container) return;
@@ -6895,7 +6893,7 @@
         document.getElementById('pmAuthorName').textContent = post.author;
         // post.username may already contain '@' — ensure no double @@
         const displayHandle = post.username ? (post.username.startsWith('@') ? post.username : '@' + post.username) : '';
-        document.getElementById('pmAuthorSub').textContent = displayHandle + ' · ' + post.timestamp;
+        document.getElementById('pmAuthorSub').textContent = displayHandle + ' · ' + formatTimestamp(new Date(post.createdAt || post.id));
         document.getElementById('pmRoleBadge').innerHTML = post.role === 'prof'
             ? ' <span class="badge-prof">PROF</span>'
             : ' <span class="badge-eleve">ÉLÈVE</span>';
@@ -7551,7 +7549,7 @@
     }
 
     function pmAutoResize(el) {
-        el.style.height = '18px';
+        el.style.height = '26px';
         el.style.height = el.scrollHeight + 'px';
         if (el.scrollHeight > 160) {
             el.style.height = '160px';
@@ -7605,7 +7603,7 @@
         post.commentList.push({
             author: userProfile.displayName || userProfile.username,
             text,
-            time: "à l'instant",
+            time: formatTimestamp(new Date()),
             date: Date.now(),
             authorId: currentUser ? String(currentUser.id) : null,
             role: userProfile.role,
@@ -7888,9 +7886,7 @@
                                     </div>
                                     <div class="upload-label">Glisse tes photos ici</div>
                                     <div class="upload-hint">JPG, PNG, WebP<br>jusqu'à 10 photos</div>
-                                    <span class="upload-choose-btn">Choisir un fichier</span>
-                                </div>
-                                <div id="photoPreviewGrid" class="photo-preview-grid" style="display:none;"></div>
+                                    <span class="upload-choose-btn" onclick="document.getElementById('photoFileInput').click()">Choisir un fichier</span> class="photo-preview-grid" style="display:none;"></div>
                             </div>
                             <!-- VIDEO -->
                             <div id="videoUploadSection" style="display:none;">
@@ -7901,7 +7897,7 @@
                                     </div>
                                     <div class="upload-label">Glisse ta vidéo ici</div>
                                     <div class="upload-hint">MP4, MOV, WebM<br>max 100 Mo</div>
-                                    <span class="upload-choose-btn">Choisir un fichier</span>
+                                    <span class="upload-choose-btn" onclick="document.getElementById('videoFileInput').click()">Choisir un fichier</span>
                                 </div>
                                 <div id="videoPreviewWrap" style="display:none;margin-top:1rem;" class="video-preview-wrap">
                                     <video id="videoPreview" controls></video>
@@ -7992,7 +7988,7 @@
             videoSrc: videoSrc,
             photos: photosData,
             hashtags: hashtags,
-            timestamp: "à l'instant", isLiked: false, isSaved: false, commentList: [], authorId: currentUser.id,
+            timestamp: formatTimestamp(new Date()), createdAt: Date.now(), isLiked: false, isSaved: false, commentList: [], authorId: currentUser.id,
             role: currentUser.role || 'eleve',
             privacy: 'public'
         };
@@ -8152,9 +8148,16 @@
         input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
     }
 
+    let currentSort = 'recent';
+
     function setSortActive(btn) {
         document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        const label = btn.textContent.trim();
+        if (label === 'Récents') currentSort = 'recent';
+        else if (label === 'Populaire') currentSort = 'popular';
+        else if (label === 'La plus ancienne') currentSort = 'oldest';
+        renderProfileGrid();
     }
 
     let currentProfileTab = 'videos';
@@ -8225,6 +8228,19 @@
         } else if (currentProfileTab === 'reposts') {
             postsToShow = posts.filter(p => userProfile.repostedPosts && userProfile.repostedPosts.includes(p.id));
         }
+
+        // Apply sort
+        postsToShow = [...postsToShow].sort((a, b) => {
+            if (currentSort === 'popular') {
+                const scoreA = (a.likes || 0) + (a.views || 0) * 0.1;
+                const scoreB = (b.likes || 0) + (b.views || 0) * 0.1;
+                return scoreB - scoreA;
+            } else if (currentSort === 'oldest') {
+                return (a.id || 0) - (b.id || 0);
+            } else {
+                return (b.id || 0) - (a.id || 0);
+            }
+        });
 
         if (postsToShow.length === 0) {
             const msgs = {
