@@ -8,7 +8,7 @@
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, updateEmail, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -32,7 +32,7 @@
         window._firebaseDb = db;
         window._firebaseStorage = storage;
         window._firebaseProvider = provider;
-        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit };
+        window._firebaseFns = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword, updateEmail, deleteUser, doc, setDoc, getDoc, collection, getDocs, addDoc, query, orderBy, onSnapshot, deleteDoc, updateDoc, arrayUnion, arrayRemove, increment, serverTimestamp, limit };
         window._firebaseStorageFns = { ref, uploadBytesResumable, getDownloadURL };
 
         // Watch auth state — restore session on page reload for ALL Firebase users
@@ -4826,7 +4826,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgPrivateAccount" onchange="showToast(this.checked?'Compte privé':'Compte public','info')">
+                            <input type="checkbox" id="stgPrivateAccount" onchange="saveSettingsToFirestore('settings.privateAccount',this.checked);showToast(this.checked?'Compte privé ✓':'Compte public ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4840,7 +4840,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgCommentPerm">
+                            <select class="stg-select" id="stgCommentPerm" onchange="saveSettingsToFirestore('settings.commentPerm',this.value);showToast('Préférence sauvegardée ✓','info')">
                                 <option value="all">Tout le monde</option>
                                 <option value="followers">Abonnés</option>
                                 <option value="none">Personne</option>
@@ -4856,7 +4856,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgMsgPerm">
+                            <select class="stg-select" id="stgMsgPerm" onchange="saveSettingsToFirestore('settings.msgPerm',this.value);showToast('Préférence sauvegardée ✓','info')">
                                 <option value="all">Tout le monde</option>
                                 <option value="followers">Abonnés</option>
                                 <option value="none">Personne</option>
@@ -4872,7 +4872,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgLikedVisible" checked onchange="userProfile.likedVisible=this.checked;showToast(this.checked?'Vidéos aimées publiques':'Vidéos aimées privées','info')">
+                            <input type="checkbox" id="stgLikedVisible" checked onchange="userProfile.likedVisible=this.checked;saveSettingsToFirestore('settings.likedVisible',this.checked);showToast(this.checked?'Vidéos aimées publiques ✓':'Vidéos aimées privées ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4886,7 +4886,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgSuggestAccount" checked onchange="showToast(this.checked?'Suggestions activées':'Suggestions désactivées','info')">
+                            <input type="checkbox" id="stgSuggestAccount" checked onchange="saveSettingsToFirestore('settings.suggestAccount',this.checked);showToast(this.checked?'Suggestions activées ✓':'Suggestions désactivées ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4898,7 +4898,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgSyncContacts" onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgSyncContacts" onchange="saveSettingsToFirestore('settings.syncContacts',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4912,7 +4912,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgSharePerm">
+                            <select class="stg-select" id="stgSharePerm" onchange="saveSettingsToFirestore('settings.sharePerm',this.value);showToast('Préférence sauvegardée ✓','info')">
                                 <option value="all">Tout le monde</option>
                                 <option value="followers">Abonnés</option>
                                 <option value="none">Personne</option>
@@ -4928,7 +4928,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgDuoPerm">
+                            <select class="stg-select" id="stgDuoPerm" onchange="saveSettingsToFirestore('settings.duoPerm',this.value);showToast('Préférence sauvegardée ✓','info')">
                                 <option value="all">Tout le monde</option>
                                 <option value="followers">Abonnés</option>
                                 <option value="none">Personne</option>
@@ -4944,7 +4944,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgAllowDownload" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgAllowDownload" checked onchange="saveSettingsToFirestore('settings.allowDownload',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4958,7 +4958,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgOnlineStatus" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgOnlineStatus" checked onchange="saveSettingsToFirestore('settings.onlineStatus',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4970,7 +4970,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgReadReceipts" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgReadReceipts" checked onchange="saveSettingsToFirestore('settings.readReceipts',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -4993,7 +4993,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgAdPersonalization" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgAdPersonalization" checked onchange="saveSettingsToFirestore('settings.adPersonalization',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5012,7 +5012,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifLike" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifLike" checked onchange="saveSettingsToFirestore('settings.notifLike',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5024,7 +5024,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifComment" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifComment" checked onchange="saveSettingsToFirestore('settings.notifComment',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5036,7 +5036,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifFollow" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifFollow" checked onchange="saveSettingsToFirestore('settings.notifFollow',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5048,7 +5048,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifMsg" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifMsg" checked onchange="saveSettingsToFirestore('settings.notifMsg',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5060,7 +5060,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifMention" onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifMention" onchange="saveSettingsToFirestore('settings.notifMention',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5072,7 +5072,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifTrend" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifTrend" checked onchange="saveSettingsToFirestore('settings.notifTrend',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5084,7 +5084,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifReply" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifReply" checked onchange="saveSettingsToFirestore('settings.notifReply',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5098,7 +5098,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgEmailWeekly" onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgEmailWeekly" onchange="saveSettingsToFirestore('settings.emailWeekly',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5110,7 +5110,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgEmailNews" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgEmailNews" checked onchange="saveSettingsToFirestore('settings.emailNews',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5124,7 +5124,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgNotifSound" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgNotifSound" checked onchange="saveSettingsToFirestore('settings.notifSound',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5136,7 +5136,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stgDndMode">
+                            <select class="stg-select" id="stgDndMode" onchange="saveSettingsToFirestore('settings.dndMode',this.value);showToast('Préférence sauvegardée ✓','info')">
                                 <option value="off">Désactivé</option>
                                 <option value="1h">1 heure</option>
                                 <option value="8h">8 heures</option>
@@ -5200,7 +5200,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgReduceMotion" onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgReduceMotion" onchange="saveSettingsToFirestore('settings.reduceMotion',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5229,7 +5229,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgSubtitles" onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgSubtitles" onchange="saveSettingsToFirestore('settings.subtitles',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5243,7 +5243,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgAutoplay" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgAutoplay" checked onchange="saveSettingsToFirestore('settings.autoplay',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5347,7 +5347,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stg2FA" onchange="showToast(this.checked?'2FA activé':'2FA désactivé','info')">
+                            <input type="checkbox" id="stg2FA" onchange="saveSettingsToFirestore('settings.twoFA',this.checked);showToast(this.checked?'2FA activé ✓':'2FA désactivé','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5359,7 +5359,7 @@
                     </div>
                     <div class="stg-row-right">
                         <div class="stg-select-wrap">
-                            <select class="stg-select" id="stg2FAMethod">
+                            <select class="stg-select" id="stg2FAMethod" onchange="saveSettingsToFirestore('settings.twoFAMethod',this.value);showToast('Méthode mise à jour ✓','info')">
                                 <option value="email">Email</option>
                                 <option value="sms">SMS</option>
                                 <option value="app">Application d'authentification</option>
@@ -5397,7 +5397,7 @@
                     </div>
                     <div class="stg-row-right">
                         <label class="stg-toggle">
-                            <input type="checkbox" id="stgLoginAlert" checked onchange="showToast('Préférence sauvegardée','info')">
+                            <input type="checkbox" id="stgLoginAlert" checked onchange="saveSettingsToFirestore('settings.loginAlert',this.checked);showToast('Préférence sauvegardée ✓','info')">
                             <div class="stg-toggle-track"></div>
                         </label>
                     </div>
@@ -5580,6 +5580,7 @@
             if (userDoc.following) userProfile.following = userDoc.following;
             if (userDoc.likedPosts) userProfile.likedPosts = userDoc.likedPosts;
             if (userDoc.repostedPosts) userProfile.repostedPosts = userDoc.repostedPosts;
+            if (userDoc.region) { currentUser.region = userDoc.region; userProfile.region = userDoc.region; }
             saveSession();
             // Load posts from Firestore
             showApp(); // showApp starts realtime listener
@@ -5631,6 +5632,7 @@
             if (userDoc.following) userProfile.following = userDoc.following;
             if (userDoc.likedPosts) userProfile.likedPosts = userDoc.likedPosts.map(id => ({ id }));
             if (userDoc.repostedPosts) userProfile.repostedPosts = userDoc.repostedPosts;
+            if (userDoc.region) { currentUser.region = userDoc.region; userProfile.region = userDoc.region; }
             saveSession();
             // showApp starts realtime listener
             // Only show app if not already showing
@@ -6397,7 +6399,12 @@
         const display = document.getElementById('stgCurrentRegion');
         if (display) display.textContent = _selectedRegion;
         saveSession();
-        showToast('Région mise à jour', 'success');
+        // Save to Firestore
+        if (window._firebaseDb && currentUser) {
+            const { doc, updateDoc } = window._firebaseFns;
+            updateDoc(doc(window._firebaseDb, 'users', currentUser.id), { region: _selectedRegion }).catch(e => console.warn('Region save error:', e));
+        }
+        showToast('Région mise à jour ✓', 'success');
         toggleRegionChange();
     }
 
@@ -6423,13 +6430,13 @@
         if (newPwd !== confirmPwd) { showToast('Les mots de passe ne correspondent pas', 'error'); return; }
         try {
             const auth = window._firebaseAuth;
-            const { signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } = window._firebaseFns;
+            const { signInWithEmailAndPassword, updatePassword: _updatePwd } = window._firebaseFns;
             if (!auth || !auth.currentUser) { showToast('Non connecté', 'error'); return; }
             // Re-authenticate first
             await signInWithEmailAndPassword(auth, currentUser.email, currentPwd);
-            // Update password
-            await auth.currentUser.updatePassword(newPwd);
-            showToast('Mot de passe mis à jour', 'success');
+            // Update password using Firebase function
+            await _updatePwd(auth.currentUser, newPwd);
+            showToast('Mot de passe mis à jour ✓', 'success');
             togglePasswordChange();
         } catch(e) {
             if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe actuel incorrect', 'error');
@@ -6457,13 +6464,23 @@
         if (!password) { showToast('Mot de passe requis pour confirmer', 'error'); return; }
         try {
             const auth = window._firebaseAuth;
-            const { signInWithEmailAndPassword } = window._firebaseFns;
+            const { signInWithEmailAndPassword, updateEmail: _updateEmail } = window._firebaseFns;
             if (!auth || !auth.currentUser) { showToast('Non connecté', 'error'); return; }
             // Re-authenticate
             await signInWithEmailAndPassword(auth, currentUser.email, password);
             // Update email via Firebase
-            await auth.currentUser.verifyBeforeUpdateEmail(newEmail);
-            showToast(`Email de vérification envoyé à ${newEmail}`, 'success');
+            await _updateEmail(auth.currentUser, newEmail);
+            // Update in Firestore too
+            if (window._firebaseDb) {
+                const { doc, updateDoc } = window._firebaseFns;
+                await updateDoc(doc(window._firebaseDb, 'users', currentUser.id), { email: newEmail });
+            }
+            currentUser.email = newEmail;
+            userProfile.email = newEmail;
+            saveSession();
+            const ce = document.getElementById('stgCurrentEmail');
+            if (ce) ce.textContent = newEmail;
+            showToast(`Email mis à jour : ${newEmail} ✓`, 'success');
             toggleEmailChange();
         } catch(e) {
             if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') showToast('Mot de passe incorrect', 'error');
@@ -8495,6 +8512,112 @@
         else if (cr && userProfile && userProfile.region) cr.textContent = userProfile.region;
         // Default tab
         switchStgTab('compte', document.querySelector('.stg-nav-item'));
+        // Load settings from Firestore
+        loadSettingsFromFirestore();
+    }
+
+    // ═══════════════════════════════════════════
+    // SAVE ALL SETTINGS TO FIRESTORE
+    // ═══════════════════════════════════════════
+    async function saveSettingsToFirestore(field, value) {
+        if (!window._firebaseDb || !currentUser) return;
+        try {
+            const { doc, updateDoc } = window._firebaseFns;
+            await updateDoc(doc(window._firebaseDb, 'users', currentUser.id), { [field]: value });
+        } catch(e) { console.warn('Settings save error:', e); }
+    }
+
+    // ═══════════════════════════════════════════
+    // LOAD ALL SETTINGS FROM FIRESTORE
+    // ═══════════════════════════════════════════
+    async function loadSettingsFromFirestore() {
+        if (!window._firebaseDb || !currentUser) return;
+        try {
+            const { doc, getDoc } = window._firebaseFns;
+            const snap = await getDoc(doc(window._firebaseDb, 'users', currentUser.id));
+            if (!snap.exists()) return;
+            const d = snap.data();
+            const s = d.settings || {};
+            // Confidentialité
+            const setChk = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.checked = val; };
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+            setChk('stgPrivateAccount', s.privateAccount);
+            setVal('stgCommentPerm', s.commentPerm);
+            setVal('stgMsgPerm', s.msgPerm);
+            setChk('stgLikedVisible', s.likedVisible !== undefined ? s.likedVisible : true);
+            setChk('stgSuggestAccount', s.suggestAccount !== undefined ? s.suggestAccount : true);
+            setChk('stgSyncContacts', s.syncContacts);
+            setVal('stgSharePerm', s.sharePerm);
+            setVal('stgDuoPerm', s.duoPerm);
+            setChk('stgAllowDownload', s.allowDownload !== undefined ? s.allowDownload : true);
+            setChk('stgOnlineStatus', s.onlineStatus !== undefined ? s.onlineStatus : true);
+            setChk('stgReadReceipts', s.readReceipts !== undefined ? s.readReceipts : true);
+            setChk('stgAdPersonalization', s.adPersonalization !== undefined ? s.adPersonalization : true);
+            // Notifications
+            setChk('stgNotifLike', s.notifLike !== undefined ? s.notifLike : true);
+            setChk('stgNotifComment', s.notifComment !== undefined ? s.notifComment : true);
+            setChk('stgNotifFollow', s.notifFollow !== undefined ? s.notifFollow : true);
+            setChk('stgNotifMsg', s.notifMsg !== undefined ? s.notifMsg : true);
+            setChk('stgNotifMention', s.notifMention);
+            setChk('stgNotifTrend', s.notifTrend !== undefined ? s.notifTrend : true);
+            setChk('stgNotifReply', s.notifReply !== undefined ? s.notifReply : true);
+            setChk('stgEmailWeekly', s.emailWeekly);
+            setChk('stgEmailNews', s.emailNews !== undefined ? s.emailNews : true);
+            setChk('stgNotifSound', s.notifSound !== undefined ? s.notifSound : true);
+            setVal('stgDndMode', s.dndMode || 'off');
+            // Sécurité
+            setChk('stgLoginAlert', s.loginAlert !== undefined ? s.loginAlert : true);
+            setChk('stg2FA', s.twoFA);
+            setVal('stg2FAMethod', s.twoFAMethod || 'email');
+            // Apparence (déjà gérée par localStorage, pas besoin de Firestore)
+        } catch(e) { console.warn('Settings load error:', e); }
+    }
+
+    // ═══════════════════════════════════════════
+    // SUPPRESSION DE COMPTE
+    // ═══════════════════════════════════════════
+    async function handleDeleteAccount() {
+        closeConfirmDeleteAccount();
+        if (!currentUser || !window._firebaseAuth || !window._firebaseAuth.currentUser) {
+            showToast('Non connecté', 'error'); return;
+        }
+        try {
+            const db = window._firebaseDb;
+            const auth = window._firebaseAuth;
+            const { doc, deleteDoc, collection, getDocs } = window._firebaseFns;
+            const { deleteUser: _deleteUser } = window._firebaseFns;
+            const uid = currentUser.id;
+            showToast('Suppression en cours...', 'info');
+            // 1. Supprimer le document utilisateur dans Firestore
+            if (db) {
+                try { await deleteDoc(doc(db, 'users', uid)); } catch(e) { console.warn('Firestore user delete error:', e); }
+                // 2. Supprimer les notifications
+                try {
+                    const notifSnap = await getDocs(collection(db, 'notifications', uid, 'items'));
+                    await Promise.all(notifSnap.docs.map(d => deleteDoc(d.ref)));
+                } catch(e) {}
+            }
+            // 3. Supprimer le compte Firebase Auth
+            await _deleteUser(auth.currentUser);
+            // 4. Nettoyer localement
+            currentUser = null;
+            window._googleLoginHandled = false;
+            localStorage.removeItem('hggsp_session');
+            localStorage.removeItem('hggsp_posts');
+            localStorage.removeItem('hggsp_deleted_posts');
+            posts = defaultDemoPosts();
+            userProfile = { username: 'user', email: 'user@example.com', avatar: '👤', canPublish: false, posts: [], likedPosts: [], following: [], repostedPosts: [], likedVisible: true };
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('appScreen').style.display = 'none';
+            document.getElementById('appScreen').className = 'app-container';
+            showToast('Compte supprimé définitivement', 'success');
+        } catch(e) {
+            if (e.code === 'auth/requires-recent-login') {
+                showToast('Reconnecte-toi d\'abord pour supprimer ton compte', 'error');
+            } else {
+                showToast('Erreur suppression : ' + e.message, 'error');
+            }
+        }
     }
 
     function switchStgTab(tabId, el) {
@@ -10046,7 +10169,7 @@
                 <div class="action-modal-title">Supprimer le compte ?</div>
                 <div class="action-modal-desc">Cette action est <strong>définitive et irréversible</strong>.<br>Toutes tes vidéos, abonnés et données seront supprimés à jamais.</div>
                 <div class="action-modal-actions">
-                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDeleteAccount();showToast('Fonctionnalité bientôt disponible','info')" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                    <button class="action-modal-btn btn-danger" onclick="handleDeleteAccount()" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
                         <span class="btn-inner">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
                             Supprimer le compte
