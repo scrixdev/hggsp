@@ -1717,6 +1717,9 @@
         .pm-reply-item:hover #rdots-btn-0,
         .pm-reply-item:hover [id^="rdots-btn-"] { opacity: 1 !important; pointer-events: auto !important; }
         .pm-rdots-wrap:hover [id^="rdots-btn-"] { opacity: 1 !important; }
+        /* Dots hidden by default, visible on hover */
+        .pm-comment-dots-btn-wrap { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+        .pm-comment:hover .pm-comment-dots-btn-wrap { opacity: 1; pointer-events: auto; }
         .pm-comment-dots-btn {
             background: rgba(255,255,255,0.08); border: none; border-radius: 50%;
             width: 26px; height: 26px; cursor: pointer; color: rgba(255,255,255,0.55);
@@ -7178,12 +7181,15 @@
                 const rCreatorTag = rIsCreator ? `<span class="pm-creator-tag">· Créateur(trice)</span>` : '';
                 const rRoleB = !rIsCreator && r.role === 'prof' ? '<span class="badge-prof" style="font-size:0.52rem;">PROF</span>' : '';
                 const isMyReply = currentUser && String(r.authorId) === String(currentUser.id);
+                const canEditReply = isMyReply && r.date && (Date.now() - r.date < 30000);
+                const editReplyBtn = canEditReply ? `<button onclick="editReply(${i},${ri})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;text-align:left;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:rgba(255,255,255,0.7);" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>` : '';
                 const rDots = isMyReply ? `
                     <span style="position:relative;display:inline-flex;" class="pm-rdots-wrap">
                         <button class="pm-comment-dots-btn" onclick="toggleReplyMenu(${i},${ri},event)" style="width:24px;height:24px;opacity:0;transition:opacity 0.15s;" id="rdots-btn-${i}-${ri}">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                         </button>
                         <div class="pm-comment-dots-menu" id="rmenu-${i}-${ri}" style="right:0;top:28px;min-width:130px;">
+                            ${editReplyBtn}
                             <button onclick="deleteReply(${i},${ri})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:#fe2c55;" onmouseover="this.style.background='rgba(254,44,85,0.1)'" onmouseout="this.style.background='none'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Supprimer
                             </button>
@@ -7196,14 +7202,14 @@
                             <span style="font-size:0.82rem;font-weight:700;">${r.author}</span>
                             ${rCreatorTag}${rRoleB}
                         </div>
-                        <div style="font-size:0.88rem;color:var(--text);margin-top:3px;line-height:1.45;">${highlightMentions(r.text)}</div>
+                        <div style="font-size:0.88rem;color:var(--text);margin-top:3px;line-height:1.45;word-break:break-word;" id="pm-reply-text-${i}-${ri}">${highlightMentions(r.text)}</div>
                         <div style="font-size:0.73rem;color:var(--text3);margin-top:5px;display:flex;align-items:center;gap:12px;">
                             <span>${r.time || "à l'instant"}</span>
                             <button class="pm-comment-reply-btn" onclick="toggleReplyInput(${i})">Répondre</button>
-                            ${rDots}
                         </div>
                     </div>
-                    <div class="pm-comment-like-right" style="min-width:28px;">
+                    <div class="pm-comment-like-right" style="min-width:28px;flex-shrink:0;">
+                        ${rDots}
                         <span class="pm-comment-like${r.likedByMe ? ' liked' : ''}" onclick="likeReply(${i},${ri})" style="cursor:pointer;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="${r.likedByMe ? '#fe2c55' : 'none'}" stroke="${r.likedByMe ? '#fe2c55' : 'currentColor'}" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                         </span>
@@ -7229,6 +7235,7 @@
             const rightCol = `
                 <div class="pm-comment-like-right" style="position:relative;">
                     ${isMyComment ? `
+                    <div class="pm-comment-dots-btn-wrap" style="position:relative;">
                     <button class="pm-comment-dots-btn" onclick="toggleCommentMenu(${i},event)" style="margin-bottom:6px;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
                     </button>
@@ -7237,6 +7244,7 @@
                         <button onclick="deleteComment(${i})" style="display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;cursor:pointer;padding:7px 12px;border-radius:7px;font-size:0.82rem;font-family:'Plus Jakarta Sans',sans-serif;color:#fe2c55;" onmouseover="this.style.background='rgba(254,44,85,0.1)'" onmouseout="this.style.background='none'">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>Supprimer
                         </button>
+                    </div>
                     </div>` : ''}
                     <span class="pm-comment-like${c.likedByMe ? ' liked' : ''}" id="clike-${i}" onclick="likeComment(this,${i})" style="cursor:pointer;display:flex;align-items:center;">
                         ${likeContent}
@@ -7349,9 +7357,13 @@
         const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
         textEl.innerHTML = `<div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
             <input id="edit-input-${idx}" value="${c.text.replace(/"/g,'&quot;')}" style="flex:1;background:var(--surface);border:1px solid rgba(254,44,85,0.4);border-radius:8px;padding:5px 10px;color:var(--text);font-size:0.88rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
-            <span style="font-size:0.72rem;color:rgba(255,255,255,0.35);white-space:nowrap;" id="edit-countdown-${idx}">${remaining}s</span>
-            <button onclick="saveCommentEdit(${idx})" style="background:var(--accent);border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">OK</button>
-            <button onclick="renderModalComments(posts.find(p=>p.id===currentModalPostId))" style="background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:5px 10px;color:var(--text2);font-size:0.8rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">✕</button>
+            <span style="font-size:0.7rem;color:var(--text3);white-space:nowrap;" id="edit-countdown-${idx}">${remaining}s</span>
+            <button onclick="saveCommentEdit(${idx})" style="width:28px;height:28px;border-radius:50%;background:#22c55e;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Sauvegarder">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button onclick="renderModalComments(posts.find(p=>p.id===currentModalPostId))" style="width:28px;height:28px;border-radius:50%;background:#fe2c55;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Annuler">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
         </div>`;
         document.getElementById(`edit-input-${idx}`)?.focus();
         // Countdown
@@ -7380,6 +7392,52 @@
         c.edited = true;
         renderModalComments(post);
         showToast('Commentaire modifié', 'success');
+    }
+
+    function editReply(ci, ri) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        const r = post.commentList[ci]?.replies_list?.[ri];
+        if (!r) return;
+        const elapsed = Date.now() - r.date;
+        if (elapsed > 30000) { showToast('Plus possible de modifier (30s écoulées)', 'error'); return; }
+        document.querySelectorAll('.pm-comment-dots-menu.open').forEach(m => m.classList.remove('open'));
+        const textEl = document.getElementById(`pm-reply-text-${ci}-${ri}`);
+        if (!textEl) return;
+        const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
+        textEl.innerHTML = `<div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+            <input id="edit-reply-input-${ci}-${ri}" value="${r.text.replace(/"/g,'&quot;')}" style="flex:1;background:var(--surface);border:1px solid rgba(254,44,85,0.4);border-radius:8px;padding:5px 10px;color:var(--text);font-size:0.88rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;">
+            <span style="font-size:0.7rem;color:var(--text3);white-space:nowrap;" id="edit-reply-countdown-${ci}-${ri}">${remaining}s</span>
+            <button onclick="saveReplyEdit(${ci},${ri})" style="width:28px;height:28px;border-radius:50%;background:#22c55e;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Sauvegarder">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button onclick="renderModalComments(posts.find(p=>p.id===currentModalPostId))" style="width:28px;height:28px;border-radius:50%;background:#fe2c55;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Annuler">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>`;
+        document.getElementById(`edit-reply-input-${ci}-${ri}`)?.focus();
+        const iv = setInterval(() => {
+            const left = Math.max(0, Math.ceil((30000 - (Date.now() - r.date)) / 1000));
+            const el = document.getElementById(`edit-reply-countdown-${ci}-${ri}`);
+            if (el) el.textContent = left + 's';
+            if (left <= 0) { clearInterval(iv); renderModalComments(post); }
+        }, 1000);
+    }
+
+    function saveReplyEdit(ci, ri) {
+        const post = posts.find(p => p.id === currentModalPostId);
+        if (!post) return;
+        const r = post.commentList[ci]?.replies_list?.[ri];
+        if (!r) return;
+        if (Date.now() - r.date > 30000) { showToast('Délai dépassé', 'error'); return; }
+        const inp = document.getElementById(`edit-reply-input-${ci}-${ri}`);
+        if (!inp) return;
+        const newText = inp.value.trim();
+        if (!newText) return;
+        r.text = newText;
+        r.edited = true;
+        renderModalComments(post);
+        showToast('Réponse modifiée', 'success');
     }
 
     function toggleCommentMenu(idx, e) {
@@ -7452,6 +7510,8 @@
         if (!c.replies_list) c.replies_list = [];
         c.replies_list.push({
             author: userProfile.displayName || userProfile.username,
+            authorId: currentUser ? currentUser.id : null,
+            date: Date.now(),
             text,
             role: userProfile.role,
             avatarImg: userProfile.avatarImg || null,
