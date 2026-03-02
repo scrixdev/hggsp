@@ -5302,7 +5302,7 @@
                         <div class="stg-row-sub">Met fin à toutes les sessions actives sauf celle-ci</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés','success')">Déconnecter</button>
+                        <button class="stg-row-action danger" onclick="openConfirmDisconnectOthers()">Déconnecter</button>
                     </div>
                 </div>
 
@@ -5375,7 +5375,7 @@
                         <div class="stg-row-sub">Met fin à toutes les sessions actives partout</div>
                     </div>
                     <div class="stg-row-right">
-                        <button class="stg-row-action danger" onclick="showToast('Tous les appareils déconnectés','success')">Tout déconnecter</button>
+                        <button class="stg-row-action danger" onclick="openConfirmDisconnectAll()">Tout déconnecter</button>
                     </div>
                 </div>
             </div>
@@ -6446,14 +6446,15 @@
         const ttName = document.getElementById('ttSidebarName');
         const ttHandle = document.getElementById('ttSidebarHandle');
         if (ttAvatar) {
+            const _svgUser = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
             if (userProfile.avatarImg) {
-                ttAvatar.innerHTML = `<img src="${userProfile.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${userProfile.avatar || '👤'}'">`; 
+                ttAvatar.innerHTML = `<img src="${userProfile.avatarImg}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'rgba(255,255,255,0.45)\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><path d=\\'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2\\'/><circle cx=\\'12\\' cy=\\'7\\' r=\\'4\\'/></svg>'">`;
             } else {
-                ttAvatar.textContent = userProfile.avatar || '👤';
+                ttAvatar.innerHTML = _svgUser;
             }
         }
         if (ttName) ttName.textContent = userProfile.displayName || userProfile.username || 'Mon Profil';
-        if (ttHandle) ttHandle.textContent = '@' + (userProfile.username || 'user');
+        if (ttHandle) ttHandle.textContent = userProfile.username ? (userProfile.username.startsWith('@') ? userProfile.username : '@' + userProfile.username) : '@user';
         // Legacy
         const sbAvatar = document.getElementById('sbAvatar');
         const sbUsername = document.getElementById('sbUsername');
@@ -7688,6 +7689,7 @@
         const emoji = document.getElementById('avatarEmoji');
         if (img) { img.src = url; img.style.display = 'block'; }
         if (emoji) emoji.style.display = 'none';
+        hggspRefreshUser();
         showToast('Photo de profil mise à jour', 'success');
     }
 
@@ -9126,6 +9128,24 @@
         });
     }
 
+    // ══════════ DISCONNECT OTHERS MODAL ══════════
+    function openConfirmDisconnectOthers() {
+        const m = document.getElementById('confirmDisconnectOthersModal');
+        m.classList.add('open'); _resetModalAnim(m);
+    }
+    function closeConfirmDisconnectOthers() {
+        document.getElementById('confirmDisconnectOthersModal').classList.remove('open');
+    }
+
+    // ══════════ DISCONNECT ALL MODAL ══════════
+    function openConfirmDisconnectAll() {
+        const m = document.getElementById('confirmDisconnectAllModal');
+        m.classList.add('open'); _resetModalAnim(m);
+    }
+    function closeConfirmDisconnectAll() {
+        document.getElementById('confirmDisconnectAllModal').classList.remove('open');
+    }
+
     // ══════════ PM OWNER DROPDOWN ══════════
     function togglePmOwnerDropdown(e) {
         e.stopPropagation();
@@ -9225,6 +9245,10 @@
         if (lm && e.target === lm) closeConfirmLogout();
         const dam = document.getElementById('confirmDeleteAccountModal');
         if (dam && e.target === dam) closeConfirmDeleteAccount();
+        const dom = document.getElementById('confirmDisconnectOthersModal');
+        if (dom && e.target === dom) closeConfirmDisconnectOthers();
+        const dall = document.getElementById('confirmDisconnectAllModal');
+        if (dall && e.target === dall) closeConfirmDisconnectAll();
     });
 
     // Live username preview
@@ -9412,5 +9436,55 @@
         <button class="priv-done" onclick="savePrivacySettings()">Terminé</button>
     </div>
 </div>
+<!-- Confirm Disconnect Others Modal -->
+<div id="confirmDisconnectOthersModal" class="action-modal-overlay">
+    <div class="action-modal-box glow-danger" style="border:1px solid rgba(254,44,85,0.12);">
+        <div class="action-modal-inner">
+            <div class="modal-icon-badge danger">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fe2c55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="2" y1="20" x2="7" y2="15"/><line x1="7" y1="20" x2="2" y2="15"/></svg>
+            </div>
+            <div class="modal-animate-in">
+                <div class="action-modal-title">Déconnecter les autres ?</div>
+                <div class="action-modal-desc">Toutes les sessions actives sur les autres appareils seront <strong>fermées</strong>. Cet appareil reste connecté.</div>
+                <div class="action-modal-actions">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDisconnectOthers();showToast('Autres appareils déconnectés','success')" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                        <span class="btn-inner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Déconnecter les autres
+                        </span>
+                    </button>
+                    <div class="action-modal-separator"></div>
+                    <button class="action-modal-btn btn-cancel" onclick="closeConfirmDisconnectOthers()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Disconnect All Modal -->
+<div id="confirmDisconnectAllModal" class="action-modal-overlay">
+    <div class="action-modal-box glow-danger" style="border:1px solid rgba(254,44,85,0.12);">
+        <div class="action-modal-inner">
+            <div class="modal-icon-badge danger">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fe2c55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 115.64 18.36"/><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div class="modal-animate-in">
+                <div class="action-modal-title">Tout déconnecter ?</div>
+                <div class="action-modal-desc">Toutes les sessions actives sur <strong>tous les appareils</strong> seront fermées, y compris celui-ci.</div>
+                <div class="action-modal-actions">
+                    <button class="action-modal-btn btn-danger" onclick="closeConfirmDisconnectAll();closeSettings();handleLogout();showToast('Tous les appareils déconnectés','success')" onmousemove="this.style.setProperty('--rx',((event.offsetX/this.offsetWidth)*100)+'%');this.style.setProperty('--ry',((event.offsetY/this.offsetHeight)*100)+'%')">
+                        <span class="btn-inner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Tout déconnecter
+                        </span>
+                    </button>
+                    <div class="action-modal-separator"></div>
+                    <button class="action-modal-btn btn-cancel" onclick="closeConfirmDisconnectAll()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
